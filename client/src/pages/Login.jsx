@@ -26,11 +26,21 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await axios.post('http://localhost:3000/api/auth/login', formData);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      const userData = response.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(userData));
       window.dispatchEvent(new Event('cartUpdated'));
-      navigate('/');
+
+      // ĐIỀU HƯỚNG AN TOÀN (Không làm hỏng trang chủ)
+      const userRole = userData.Role || userData.role;
+      if (userRole && userRole.toString().toLowerCase() === 'admin') {
+        navigate('/admin'); // Admin thì vào Dashboard
+      } else {
+        navigate('/'); // Khách hàng thì về trang chủ gốc (Header giữ nguyên gạch chân)
+      }
+
     } catch (error) {
-      setError(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác');
+      setError(error.response?.data?.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -48,33 +58,33 @@ export default function Login() {
           
           {/* Cột Trái: Form */}
           <div style={{ padding: '60px', textAlign: 'center' }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '900', color: colors.text, marginBottom: '10px' }}>Chào mừng trở lại!</h1>
-            <p style={{ color: colors.textLight, marginBottom: '40px' }}>Vui lòng đăng nhập để tiếp tục mua sắm.</p>
+            <h1 style={{ fontSize: '32px', fontWeight: '900', color: colors.text, marginBottom: '10px' }}>Welcome Back!</h1>
+            <p style={{ color: colors.textLight, marginBottom: '40px' }}>Please log in to continue shopping.</p>
 
             {error && <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '12px', borderRadius: '10px', marginBottom: '20px', fontSize: '14px', textAlign: 'left' }}>⚠️ {error}</div>}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label style={labelStyle}>Địa chỉ Email</label>
+                <label style={labelStyle}>Email Address</label>
                 <input type="email" name="email" placeholder="example@email.com" required onChange={handleChange} style={inputStyle} onFocus={(e) => e.target.style.boxShadow = `0 0 0 2px ${colors.primary}33`} onBlur={(e) => e.target.style.boxShadow = 'none'} />
               </div>
               <div>
-                <label style={labelStyle}>Mật khẩu</label>
+                <label style={labelStyle}>Password</label>
                 <input type="password" name="password" placeholder="••••••••" required onChange={handleChange} style={inputStyle} onFocus={(e) => e.target.style.boxShadow = `0 0 0 2px ${colors.primary}33`} onBlur={(e) => e.target.style.boxShadow = 'none'} />
               </div>
-              <div style={{ textAlign: 'right' }}><span style={{ fontSize: '14px', color: colors.primary, fontWeight: '600', cursor: 'pointer' }}>Quên mật khẩu?</span></div>
+              <div style={{ textAlign: 'right' }}><span style={{ fontSize: '14px', color: colors.primary, fontWeight: '600', cursor: 'pointer' }}>Forgot password?</span></div>
               <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', backgroundColor: loading ? '#94a3b8' : colors.primary, color: 'white', border: 'none', borderRadius: '30px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', marginTop: '10px' }} onMouseOver={(e) => !loading && (e.currentTarget.style.backgroundColor = colors.primaryHover)}>
-                {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
+                {loading ? 'Processing...' : 'Login'}
               </button>
             </form>
 
-            <p style={{ marginTop: '30px', color: colors.textLight }}>Chưa có tài khoản? <span onClick={() => navigate('/register')} style={{ color: colors.primary, fontWeight: '700', cursor: 'pointer' }}>Đăng ký ngay</span></p>
+            <p style={{ marginTop: '30px', color: colors.textLight }}>Don't have an account? <span onClick={() => navigate('/register')} style={{ color: colors.primary, fontWeight: '700', cursor: 'pointer' }}>Register now</span></p>
           </div>
 
           {/* Cột Phải: Ảnh/Gradient */}
           <div style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, #1d4ed8 100%)`, padding: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
             <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '20px' }}>CGK SHOP</h2>
-            <p style={{ lineHeight: '1.6', color: '#bfdbfe' }}>Khám phá những bộ sưu tập thời trang mới nhất và định hình phong cách riêng của bạn.</p>
+            <p style={{ lineHeight: '1.6', color: '#bfdbfe' }}>Discover the latest fashion collections and define your own style.</p>
           </div>
         </div>
       </div>

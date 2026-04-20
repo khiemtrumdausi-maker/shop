@@ -1,40 +1,37 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-// 1. Giữ Login và Register ở ngoài thư mục customer
 import Login from './pages/Login';
 import Register from './pages/Register';
-
-// 2. Các trang dành cho khách hàng đã chuyển vào thư mục customer
 import Home from './pages/customer/Home';
 import Cart from './pages/customer/Cart'; 
 import Shop from './pages/customer/Shop';
 import About from './pages/customer/About'; 
 import Contact from './pages/customer/Contact';
 import Profile from './pages/customer/Profile';
+import AdminLayout from './components/AdminLayout'; 
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 
-// 3. Các trang dành cho Admin (Bạn sẽ tạo trong pages/admin/)
-// import AdminLayout from './pages/admin/AdminLayout';
-// import Dashboard from './pages/admin/Dashboard';
-
-// Thành phần bảo vệ Route cho Admin
+// THÀNH PHẦN BẢO VỆ ROUTE ADMIN ĐÃ ĐƯỢC NÂNG CẤP
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem('user'));
-  // Kiểm tra Role từ Database clothesshopdb
-  if (userInfo && userInfo.Role === 'Admin') {
-    return children;
+  
+  // Lấy Role linh hoạt (Bất chấp Backend trả về chữ hoa hay thường)
+  const userRole = userInfo?.Role || userInfo?.role;
+
+  if (userRole && userRole.toString().toLowerCase() === 'admin') {
+    return children; // Cho phép vào Dashboard
   }
-  return <Navigate to="/" />;
+  
+  return <Navigate to="/" />; // Không phải Admin thì về trang chủ khách
 };
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Xác thực chung */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Giao diện Khách hàng */}
+        {/* Trả lại sự tự do: Trang chủ ở dấu / */}
         <Route path="/" element={<Home />} /> 
         <Route path="/cart" element={<Cart />} />
         <Route path="/shop" element={<Shop />} />
@@ -42,15 +39,12 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* Giao diện Quản trị (Admin) */}
-        {/* <Route path="/admin" element={
+        {/* Admin vẫn được bảo vệ */}
+        <Route path="/admin" element={
           <AdminRoute>
-            <AdminLayout /> 
+            <AdminLayout><AdminDashboard /></AdminLayout>
           </AdminRoute>
-        }>
-          <Route index element={<Dashboard />} />
-        </Route> 
-        */}
+        } />
       </Routes>
     </BrowserRouter>
   );

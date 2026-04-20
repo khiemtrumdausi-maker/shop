@@ -1,49 +1,50 @@
 // File: server/controllers/authController.js
 const UserModel = require('../models/UserModel');
 
-// ================= HÀM ĐĂNG NHẬP (LOGIN) =================
+// ================= LOGIN FUNCTION =================
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await UserModel.findByCredentials(email, password);
 
     if (!user) {
-      return res.status(401).json({ message: 'Sai email hoặc mật khẩu!' });
+      return res.status(401).json({ message: 'Invalid email or password!' });
     }
 
+    // TRẢ LẠI KEY CHỮ THƯỜNG ĐỂ KHÔNG LÀM HỎNG GIỎ HÀNG VÀ HEADER
     res.status(200).json({
-      message: 'Đăng nhập thành công!',
+      message: 'Login successful!',
       user: {
-        id: user.UserID,
-        name: user.Name,
+        id: user.UserID,     // Trả lại 'id' để Shop.jsx thêm được vào giỏ
+        name: user.Name,     // Trả lại 'name' để Header.jsx hiện được tên
         email: user.Email,
-        role: user.Role
+        role: user.Role      // Trả lại 'role'
       }
     });
   } catch (error) {
-    console.error('Lỗi API Login:', error);
-    res.status(500).json({ message: 'Lỗi server khi truy vấn Database' });
+    console.error('Login API Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-// ================= HÀM ĐĂNG KÝ (REGISTER) =================
+// ================= REGISTER FUNCTION =================
 const register = async (req, res) => {
   const { email } = req.body;
   try {
     const existingUsers = await UserModel.findByEmail(email);
     if (existingUsers.length > 0) {
-      return res.status(400).json({ message: 'Email này đã được sử dụng!' });
+      return res.status(400).json({ message: 'This email is already registered!' });
     }
 
     await UserModel.create(req.body);
-    res.status(201).json({ message: 'Đăng ký tài khoản thành công!' });
+    res.status(201).json({ message: 'Account created successfully!' });
   } catch (error) {
-    console.error('Lỗi API Register:', error);
-    res.status(500).json({ message: 'Lỗi server khi lưu vào Database' });
+    console.error('Register API Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-// ================= HÀM CẬP NHẬT (UPDATE USER) =================
+// ================= UPDATE USER FUNCTION =================
 const updateUser = async (req, res) => {
   const userId = req.params.id;
   const { name, phone, address } = req.body;
@@ -52,18 +53,23 @@ const updateUser = async (req, res) => {
     const result = await UserModel.update(userId, req.body);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
+      return res.status(404).json({ message: 'User not found!' });
     }
 
+    // TRẢ LẠI KEY CHỮ THƯỜNG CHO ĐỒNG BỘ
     res.status(200).json({
-      message: 'Cập nhật thông tin thành công!',
-      user: { id: userId, name, phone, address }
+      message: 'Profile updated successfully!',
+      user: { 
+        id: userId, 
+        name: name, 
+        phone: phone, 
+        address: address 
+      }
     });
   } catch (error) {
-    console.error('Lỗi API UpdateUser:', error);
-    res.status(500).json({ message: 'Lỗi server khi cập nhật Database' });
+    console.error('UpdateUser API Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-// EXPORT ĐẦY ĐỦ 3 HÀM
 module.exports = { login, register, updateUser };
