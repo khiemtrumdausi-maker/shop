@@ -9,19 +9,22 @@ import Contact from './pages/customer/Contact';
 import Profile from './pages/customer/Profile';
 import AdminLayout from './components/AdminLayout'; 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminProducts } from './pages/admin/AdminProducts';
+import { AdminOrders } from './pages/admin/AdminOrders';
+import { AdminUsers } from './pages/admin/AdminUsers';
 
-// THÀNH PHẦN BẢO VỆ ROUTE ADMIN ĐÃ ĐƯỢC NÂNG CẤP
+const HomeRedirect = () => {
+  const userInfo = JSON.parse(localStorage.getItem('user'));
+  const userRole = (userInfo?.Role || userInfo?.role || '').toString().toLowerCase();
+  if (userRole === 'admin') return <Navigate to="/admin" replace />;
+  return <Home />;
+};
+
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem('user'));
-  
-  // Lấy Role linh hoạt (Bất chấp Backend trả về chữ hoa hay thường)
-  const userRole = userInfo?.Role || userInfo?.role;
-
-  if (userRole && userRole.toString().toLowerCase() === 'admin') {
-    return children; // Cho phép vào Dashboard
-  }
-  
-  return <Navigate to="/" />; // Không phải Admin thì về trang chủ khách
+  const userRole = (userInfo?.Role || userInfo?.role || '').toString().toLowerCase();
+  if (userRole === 'admin') return children;
+  return <Navigate to="/" />;
 };
 
 function App() {
@@ -30,24 +33,20 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-
-        {/* Trả lại sự tự do: Trang chủ ở dấu / */}
-        <Route path="/" element={<Home />} /> 
+        <Route path="/" element={<HomeRedirect />} /> 
         <Route path="/cart" element={<Cart />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} /> 
         <Route path="/contact" element={<Contact />} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* Admin vẫn được bảo vệ */}
-        <Route path="/admin" element={
-          <AdminRoute>
-            <AdminLayout><AdminDashboard /></AdminLayout>
-          </AdminRoute>
-        } />
+        <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/products" element={<AdminRoute><AdminLayout><AdminProducts /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><AdminLayout><AdminOrders /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/customers" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
 export default App;
