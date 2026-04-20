@@ -1,19 +1,16 @@
-const db = require('../config/db');
+// File: server/controllers/authController.js
+const UserModel = require('../models/UserModel');
 
 // ================= HÀM ĐĂNG NHẬP (LOGIN) =================
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const [rows] = await db.execute(
-      'SELECT * FROM users WHERE Email = ? AND Password = ? AND Status = "Active"', 
-      [email, password]
-    );
+    const user = await UserModel.findByCredentials(email, password);
 
-    if (rows.length === 0) {
+    if (!user) {
       return res.status(401).json({ message: 'Sai email hoặc mật khẩu!' });
     }
 
-    const user = rows[0];
     res.status(200).json({
       message: 'Đăng nhập thành công!',
       user: {
@@ -31,18 +28,14 @@ const login = async (req, res) => {
 
 // ================= HÀM ĐĂNG KÝ (REGISTER) =================
 const register = async (req, res) => {
-  const { name, email, password, phone, address } = req.body;
+  const { email } = req.body;
   try {
-    const [existingUsers] = await db.execute('SELECT * FROM users WHERE Email = ?', [email]);
+    const existingUsers = await UserModel.findByEmail(email);
     if (existingUsers.length > 0) {
       return res.status(400).json({ message: 'Email này đã được sử dụng!' });
     }
 
-    await db.execute(
-      'INSERT INTO users (Name, Email, Password, Phone, Address, Role, Status) VALUES (?, ?, ?, ?, ?, "Customer", "Active")',
-      [name, email, password, phone, address]
-    );
-
+    await UserModel.create(req.body);
     res.status(201).json({ message: 'Đăng ký tài khoản thành công!' });
   } catch (error) {
     console.error('Lỗi API Register:', error);
@@ -56,10 +49,7 @@ const updateUser = async (req, res) => {
   const { name, phone, address } = req.body;
 
   try {
-    const [result] = await db.execute(
-      'UPDATE users SET Name = ?, Phone = ?, Address = ? WHERE UserID = ?',
-      [name, phone, address, userId]
-    );
+    const result = await UserModel.update(userId, req.body);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Không tìm thấy người dùng!' });

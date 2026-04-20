@@ -1,45 +1,40 @@
-const db = require('../config/db');
+// File: server/controllers/orderController.js
+const OrderModel = require('../models/OrderModel');
 
+// 1. Khách hàng thực hiện đặt hàng
 const checkout = async (req, res) => {
     const { UserID, TotalPrice, PaymentMethod } = req.body;
-
     try {
-        // 1. Tạo đơn hàng mới trong bảng orders
-        const [orderResult] = await db.execute(
-            'INSERT INTO orders (UserID, TotalPrice, Status) VALUES (?, ?, "Pending")',
-            [UserID, TotalPrice]
-        );
-        const orderId = orderResult.insertId;
-
-        // 2. Lấy toàn bộ item trong giỏ của User để chuyển sang orderdetails
-        const [cartItems] = await db.execute(
-            'SELECT ci.ProductID, ci.SizeID, ci.Quantity, p.Price FROM cartitems ci JOIN carts c ON ci.CartID = c.CartID JOIN products p ON ci.ProductID = p.ProductID WHERE c.UserID = ?',
-            [UserID]
-        );
-
-        for (let item of cartItems) {
-            await db.execute(
-                'INSERT INTO orderdetails (OrderID, ProductID, SizeID, Quantity, Price) VALUES (?, ?, ?, ?, ?)',
-                [orderId, item.ProductID, item.SizeID, item.Quantity, item.Price]
-            );
-        }
-
-        // 3. Tạo bản ghi thanh toán trong bảng payments
-        await db.execute(
-            'INSERT INTO payments (OrderID, PaymentMethod, Status) VALUES (?, ?, "Pending")',
-            [orderId, PaymentMethod]
-        );
-
-        // 4. Xóa toàn bộ giỏ hàng sau khi đã thanh toán thành công
-        const [cart] = await db.execute('SELECT CartID FROM carts WHERE UserID = ?', [UserID]);
-        await db.execute('DELETE FROM cartitems WHERE CartID = ?', [cart[0].CartID]);
-
+        const orderId = await OrderModel.createOrder(UserID, TotalPrice, PaymentMethod);
         res.status(201).json({ message: 'Đặt hàng thành công!', orderId });
-
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi thực hiện thanh toán', error });
+        console.error('Lỗi thanh toán:', error);
+        res.status(500).json({ message: 'Lỗi khi thực hiện thanh toán', error: error.message });
     }
 };
 
-module.exports = { checkout };
+// 2. Admin lấy danh sách toàn bộ đơn hàng
+const getAllOrders = async (req, res) => {
+    try {
+        const orders = await OrderModel.getAllOrders();
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Lỗi lấy đơn hàng:', error);
+        res.status(500).json({ message: 'Lỗi khi lấy danh sách đơn hàng' });
+    }
+};
+
+// 3. Admin cập nhật trạng thái (Duyệt đơn, Hủy đơn...)
+const updateStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        await OrderModel.updateOrderStatus(id, status);
+        res.status(200).json({ message: 'Cập nhật trạng thái thành công' });
+    } catch (error) {
+        console.error('Lỗi cập nhật trạng thái:', error);
+        res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái' });
+    }
+};
+
+module.exports = { checkout, getAllOrders, updateStatus };

@@ -5,7 +5,15 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 export default function Register() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  // 1. Cập nhật state formData để chứa thêm phone và address
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    phone: '', 
+    address: '', 
+    password: '', 
+    confirmPassword: '' 
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -56,10 +64,24 @@ export default function Register() {
                 <label style={labelStyle}>Họ và tên</label>
                 <input type="text" name="name" placeholder="Nguyễn Văn A" required onChange={handleChange} style={inputStyle} onFocus={(e) => e.target.style.boxShadow = `0 0 0 2px ${colors.primary}33`} onBlur={(e) => e.target.style.boxShadow = 'none'} />
               </div>
+
+              {/* 2. Thêm ô nhập Số điện thoại */}
+              <div>
+                <label style={labelStyle}>Số điện thoại</label>
+                <input type="tel" name="phone" placeholder="0987654321" required onChange={handleChange} style={inputStyle} onFocus={(e) => e.target.style.boxShadow = `0 0 0 2px ${colors.primary}33`} onBlur={(e) => e.target.style.boxShadow = 'none'} />
+              </div>
+
               <div>
                 <label style={labelStyle}>Địa chỉ Email</label>
                 <input type="email" name="email" placeholder="example@email.com" required onChange={handleChange} style={inputStyle} onFocus={(e) => e.target.style.boxShadow = `0 0 0 2px ${colors.primary}33`} onBlur={(e) => e.target.style.boxShadow = 'none'} />
               </div>
+
+              {/* 3. Thêm ô nhập Địa chỉ */}
+              <div>
+                <label style={labelStyle}>Địa chỉ giao hàng</label>
+                <input type="text" name="address" placeholder="Số nhà, Tên đường, Quận/Huyện, Tỉnh/Thành phố" required onChange={handleChange} style={inputStyle} onFocus={(e) => e.target.style.boxShadow = `0 0 0 2px ${colors.primary}33`} onBlur={(e) => e.target.style.boxShadow = 'none'} />
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
                   <label style={labelStyle}>Mật khẩu</label>
