@@ -2,22 +2,37 @@
 const db = require('../config/db');
 
 class ProductModel {
-    // 1. Lấy tất cả sản phẩm
+    // 1. Lấy tất cả sản phẩm (Giữ nguyên JOIN để lấy CategoryName)
     static async getAll() {
         const sql = `
             SELECT p.*, c.CategoryName 
             FROM products p 
             LEFT JOIN categories c ON p.CategoryID = c.CategoryID
+            ORDER BY p.ProductID DESC
         `;
         const [rows] = await db.execute(sql);
         return rows;
     }
 
-    // 2. Thêm sản phẩm mới
+    // 2. Thêm sản phẩm mới (ĐÃ CẬP NHẬT STATUS)
     static async add(productData) {
-        const { ProductName, Price, Description, Image, Gender, CategoryID } = productData;
-        const sql = 'INSERT INTO products (ProductName, Price, Description, Image, Gender, CategoryID) VALUES (?, ?, ?, ?, ?, ?)';
-        const [result] = await db.execute(sql, [ProductName, Price, Description, Image, Gender, CategoryID]);
+        const { ProductName, Price, Description, Image, Gender, CategoryID, Status } = productData;
+        
+        // Thêm Status vào câu lệnh INSERT (Tổng cộng 7 dấu ?)
+        const sql = `
+            INSERT INTO products (ProductName, Price, Description, Image, Gender, CategoryID, Status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        const [result] = await db.execute(sql, [
+            ProductName, 
+            Price, 
+            Description, 
+            Image, 
+            Gender, 
+            CategoryID, 
+            Status || 'Active' // Mặc định là Active nếu không gửi từ Frontend
+        ]);
         return result;
     }
 

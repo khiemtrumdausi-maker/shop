@@ -13,12 +13,30 @@ const getAllProducts = async (req, res) => {
     }
 };
 
-// 2. Thêm sản phẩm mới
+// 2. Thêm sản phẩm mới (Đã hỗ trợ Upload ảnh, Status, Gender)
 const addProduct = async (req, res) => {
     try {
-        await ProductModel.add(req.body);
+        // 1. Bóc tách thêm Status từ req.body
+        const { ProductName, Price, Description, CategoryID, Gender, Status } = req.body;
+
+        // 2. Xử lý đường dẫn ảnh (Ưu tiên file từ máy tính)
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : req.body.Image;
+
+        // 3. Đóng gói dữ liệu để gửi sang Model
+        const productData = {
+            ProductName,
+            Price: parseFloat(Price),
+            Description,
+            Image: imagePath,
+            CategoryID: parseInt(CategoryID),
+            Gender: Gender || 'Unisex',
+            Status: Status || 'Active' // Thêm dòng này để khớp Model mới
+        };
+
+        await ProductModel.add(productData);
         res.status(201).json({ message: 'Thêm sản phẩm thành công!' });
     } catch (error) {
+        console.error("Lỗi khi thêm SP:", error);
         res.status(500).json({ message: 'Lỗi khi thêm sản phẩm', error });
     }
 };
