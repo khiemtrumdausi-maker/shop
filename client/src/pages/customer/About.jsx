@@ -1,6 +1,6 @@
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-
+// Đường dẫn MỚI (đúng)
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 export default function About() {
   const colors = { 
     primary: '#2563eb', 

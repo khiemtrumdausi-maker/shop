@@ -1,5 +1,6 @@
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+// Đường dẫn MỚI (đúng)
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react'; // Bắt buộc import thêm useEffect
 

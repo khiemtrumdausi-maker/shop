@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+// Đường dẫn MỚI (đúng)
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
