@@ -1,7 +1,7 @@
 // File: server/controllers/productController.js
 const ProductModel = require('../models/ProductModel');
-const SizeModel = require('../models/SizeModel'); // Import Model mới
-const InventoryModel = require('../models/InventoryModel'); // Import Model mới
+const SizeModel = require('../models/SizeModel'); 
+const InventoryModel = require('../models/InventoryModel'); 
 
 // 1. Lấy tất cả sản phẩm
 const getAllProducts = async (req, res) => {
@@ -13,16 +13,12 @@ const getAllProducts = async (req, res) => {
     }
 };
 
-// 2. Thêm sản phẩm mới (Đã hỗ trợ Upload ảnh, Status, Gender)
+// 2. Thêm sản phẩm mới
 const addProduct = async (req, res) => {
     try {
-        // 1. Bóc tách thêm Status từ req.body
         const { ProductName, Price, Description, CategoryID, Gender, Status } = req.body;
-
-        // 2. Xử lý đường dẫn ảnh (Ưu tiên file từ máy tính)
         const imagePath = req.file ? `/uploads/${req.file.filename}` : req.body.Image;
 
-        // 3. Đóng gói dữ liệu để gửi sang Model
         const productData = {
             ProductName,
             Price: parseFloat(Price),
@@ -30,7 +26,7 @@ const addProduct = async (req, res) => {
             Image: imagePath,
             CategoryID: parseInt(CategoryID),
             Gender: Gender || 'Unisex',
-            Status: Status || 'Active' // Thêm dòng này để khớp Model mới
+            Status: Status || 'Active'
         };
 
         await ProductModel.add(productData);
@@ -38,6 +34,34 @@ const addProduct = async (req, res) => {
     } catch (error) {
         console.error("Lỗi khi thêm SP:", error);
         res.status(500).json({ message: 'Lỗi khi thêm sản phẩm', error });
+    }
+};
+
+// 7. [MỚI THÊM] Cập nhật sản phẩm (Hàm này giải quyết lỗi của Khiêm đây)
+const updateProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ProductName, Price, Description, CategoryID, Gender, Status, Image } = req.body;
+
+        // Nếu Multer nhận được file (req.file) -> lấy path mới
+        // Nếu không có file -> lấy lại giá trị Image cũ gửi từ body (chính là link cũ)
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : Image;
+
+        const updateData = {
+            ProductID: id,
+            ProductName,
+            Price: parseFloat(Price),
+            Description,
+            Image: imagePath, // Link cũ sẽ được giữ lại ở đây
+            CategoryID: parseInt(CategoryID),
+            Gender,
+            Status
+        };
+
+        await ProductModel.update(updateData);
+        res.status(200).json({ message: 'Update success' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error', error });
     }
 };
 
@@ -52,19 +76,18 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-// 4. Lấy TẤT CẢ size và số lượng tồn kho của 1 sản phẩm (Dùng cho trang Chi tiết SP)
+// 4. Lấy TẤT CẢ size và tồn kho
 const getProductSizes = async (req, res) => {
     try {
         const productId = req.params.id;
         const sizes = await ProductModel.getSizes(productId);
         res.status(200).json(sizes);
     } catch (error) {
-        console.error('Lỗi lấy size:', error);
         res.status(500).json({ message: 'Lỗi server khi lấy size' });
     }
 };
 
-// 5. [MỚI] Lấy danh sách toàn bộ Size có trong hệ thống (Dùng cho Admin tạo SP)
+// 5. Lấy danh sách toàn bộ Size
 const getAllSizes = async (req, res) => {
     try {
         const sizes = await SizeModel.getAll();
@@ -74,23 +97,24 @@ const getAllSizes = async (req, res) => {
     }
 };
 
-// 6. [MỚI] Cập nhật số lượng kho hàng (Dùng cho trang Quản lý kho)
+// 6. Cập nhật số lượng kho hàng
 const updateStock = async (req, res) => {
     const { productId, sizeId, stock } = req.body;
     try {
         await InventoryModel.updateStock(productId, sizeId, stock);
         res.status(200).json({ message: 'Cập nhật kho hàng thành công!' });
     } catch (error) {
-        console.error('Lỗi cập nhật kho:', error);
         res.status(500).json({ message: 'Lỗi server khi cập nhật kho' });
     }
 };
 
+// QUAN TRỌNG: Phải export updateProduct ra thì file Router mới gọi được
 module.exports = { 
     getAllProducts, 
     addProduct, 
+    updateProduct, // <--- PHẢI CÓ DÒNG NÀY
     deleteProduct, 
     getProductSizes,
-    getAllSizes, // Export hàm mới
-    updateStock   // Export hàm mới
+    getAllSizes, 
+    updateStock 
 };

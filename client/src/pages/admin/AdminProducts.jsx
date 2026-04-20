@@ -54,26 +54,32 @@ export const AdminProducts = () => {
       data.append('CategoryID', formData.CategoryID);
       data.append('Gender', formData.Gender);
       data.append('Status', formData.Status);
-      if (selectedFile) data.append('Image', selectedFile);
+
+      // LOGIC THÔNG MINH:
+      if (selectedFile) {
+        // Nếu có chọn file mới -> Gửi file
+        data.append('Image', selectedFile);
+      } else if (editingProduct) {
+        // Nếu không chọn file mới và đang ở chế độ SỬA -> Gửi lại link ảnh cũ
+        data.append('Image', editingProduct.Image);
+      }
 
       const url = editingProduct 
         ? `http://localhost:3000/api/products/${editingProduct.ProductID}`
         : 'http://localhost:3000/api/products';
       
-      const method = editingProduct ? 'put' : 'post';
-
       await axios({
-        method: method,
+        method: editingProduct ? 'put' : 'post',
         url: url,
         data: data,
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast.success(editingProduct ? 'Product updated!' : 'Product added successfully!');
+      toast.success('Thành công!');
       loadProducts();
       closeModal();
     } catch (error) {
-      toast.error('Error saving product');
+      toast.error('Lỗi khi lưu!');
     }
   };
 
