@@ -36,6 +36,18 @@ class UserModel {
     );
     return result;
   }
+
+  // 5. Lấy tất cả người dùng (Cho trang Admin)
+  static async getAll() {
+    const [rows] = await db.execute('SELECT * FROM users ORDER BY UserID DESC');
+    return rows;
+  }
+
+  // 6. Xóa người dùng
+  static async delete(id) {
+    const [result] = await db.execute('DELETE FROM users WHERE UserID = ?', [id]);
+    return result;
+  }
 }
 
 module.exports = UserModel;

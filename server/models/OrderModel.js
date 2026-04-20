@@ -60,17 +60,17 @@ class OrderModel {
         }
     }
 
-    // B. DÀNH CHO ADMIN: Lấy tất cả đơn hàng kèm tên khách
-    static async getAllOrders() {
-        const sql = `
-            SELECT o.*, u.Name as CustomerName, u.Email as CustomerEmail
-            FROM orders o 
-            JOIN users u ON o.UserID = u.UserID 
-            ORDER BY o.OrderDate DESC
-        `;
-        const [rows] = await db.execute(sql);
-        return rows;
-    }
+    // File: server/models/OrderModel.js
+static async getAllOrders() {
+    const sql = `
+        SELECT o.*, u.Name as CustomerName, u.Email as CustomerEmail
+        FROM orders o 
+        LEFT JOIN users u ON o.UserID = u.UserID 
+        ORDER BY o.OrderDate DESC
+    `;
+    const [rows] = await db.execute(sql);
+    return rows;
+}
 
     // C. DÀNH CHO ADMIN: Cập nhật trạng thái đơn hàng
     static async updateOrderStatus(orderId, status) {

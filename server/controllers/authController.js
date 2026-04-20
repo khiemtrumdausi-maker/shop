@@ -72,4 +72,32 @@ const updateUser = async (req, res) => {
   }
 };
 
-module.exports = { login, register, updateUser };
+
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await UserModel.getAll(); // Nhớ thêm hàm getAll() vào UserModel.js như mình bảo nhé
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('GetAllUsers API Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+// ================= DELETE USER (Dành cho Admin) =================
+const deleteUser = async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const result = await UserModel.delete(userId); // Nhớ thêm hàm delete() vào UserModel.js
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found!' });
+    }
+    res.status(200).json({ message: 'User deleted successfully!' });
+  } catch (error) {
+    console.error('DeleteUser API Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+// NHỚ EXPORT THÊM 2 HÀM MỚI NÀY
+module.exports = { login, register, updateUser, getAllUsers, deleteUser };
