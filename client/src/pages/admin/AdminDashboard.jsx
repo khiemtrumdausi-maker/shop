@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, TrendingUp, Bell, PackageSearch, UserPlus } from 'lucide-react';
 import axios from 'axios';
 
 export const AdminDashboard = () => {
@@ -16,18 +16,13 @@ export const AdminDashboard = () => {
   const loadStats = async () => {
     try {
       const ordersRes = await axios.get('http://localhost:3000/api/orders/all');
-      const ordersData = ordersRes.data;
-
       const usersRes = await axios.get('http://localhost:3000/api/users');
-      const usersData = usersRes.data;
-
-      const revenue = ordersData
+      const revenue = ordersRes.data
         .filter((o) => o.Status === 'Delivered')
         .reduce((sum, o) => sum + Number(o.TotalPrice), 0);
-
       setTotalRevenue(revenue);
-      setTotalOrders(ordersData.length);
-      setTotalCustomers(usersData.length);
+      setTotalOrders(ordersRes.data.length);
+      setTotalCustomers(usersRes.data.length);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
@@ -42,80 +37,66 @@ export const AdminDashboard = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      'Pending': 'bg-orange-100 text-orange-700',
-      'Confirmed': 'bg-purple-100 text-purple-700',
-      'Shipped': 'bg-blue-100 text-blue-700',
-      'Delivered': 'bg-green-100 text-green-700',
-      'Cancelled': 'bg-red-100 text-red-700'
-    };
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[status] || 'bg-gray-100 text-gray-700'}`}>
-        {status}
-      </span>
-    );
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   const stats = [
-    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: <DollarSign className="w-6 h-6 text-white" />, color: 'bg-green-500' },
-    { title: 'Total Orders', value: totalOrders.toString(), icon: <ShoppingCart className="w-6 h-6 text-white" />, color: 'bg-blue-500' },
-    { title: 'Total Customers', value: totalCustomers.toString(), icon: <Users className="w-6 h-6 text-white" />, color: 'bg-purple-500' },
-    { title: 'Growth Rate', value: '+14%', icon: <TrendingUp className="w-6 h-6 text-white" />, color: 'bg-orange-500' },
+    { title: 'Revenue', value: formatCurrency(totalRevenue), icon: <DollarSign size={20} />, color: 'bg-emerald-500' },
+    { title: 'Orders', value: totalOrders.toString(), icon: <ShoppingCart size={20} />, color: 'bg-blue-500' },
+    { title: 'Customers', value: totalCustomers.toString(), icon: <Users size={20} />, color: 'bg-violet-500' },
+    { title: 'Growth', value: '+14%', icon: <TrendingUp size={20} />, color: 'bg-orange-500' },
   ];
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">System Overview</h1>
-        <p className="text-gray-500 text-sm">Welcome back, Administrator.</p>
+    <div className="w-full">
+      {/* 1. Header gọn hơn (py-4 thay vì py-6) */}
+      <div className="mb-6 mt-0 py-4">
+        <h1 className="text-2xl font-black text-slate-800 tracking-tight">System Overview</h1>
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Dashboard Control Panel</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* 2. Thẻ Stats thu nhỏ lại */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat, idx) => (
-          <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
-            <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center shadow-lg`}>
-              {stat.icon}
-            </div>
+          <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex items-center justify-between transition-all hover:shadow-md">
             <div>
-              <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-              <h3 className="text-xl font-black text-gray-900">{stat.value}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.title}</p>
+              <h3 className="text-xl font-black text-slate-800">{stat.value}</h3>
+            </div>
+            <div className={`${stat.color} w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-md`}>
+              {stat.icon}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">Recent Orders</h2>
-            <button className="text-sm font-medium text-blue-600 hover:text-blue-800">View All</button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 3. Bảng dữ liệu gọn hơn (py-3 thay vì py-5) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-5 border-b border-slate-50 flex justify-between items-center">
+            <h2 className="text-base font-black text-slate-800">Recent Orders</h2>
+            <button className="text-xs font-bold text-blue-600 hover:underline">View All</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wider">
+              <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
                 <tr>
-                  <th className="px-6 py-4">Order ID</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Total Price</th>
-                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-3">ID</th>
+                  <th className="px-6 py-3">Customer</th>
+                  <th className="px-6 py-3">Total</th>
+                  <th className="px-6 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
+              <tbody className="divide-y divide-slate-50 text-xs font-medium">
                 {recentOrders.map((order) => (
-                  <tr key={order.OrderID} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-700">#ORD-{String(order.OrderID).padStart(4, '0')}</td>
-                    <td className="px-6 py-4 text-blue-600 font-semibold">{order.CustomerName}</td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {new Date(order.OrderDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  <tr key={order.OrderID} className="hover:bg-slate-50/30 transition-colors">
+                    <td className="px-6 py-3 font-mono text-slate-400">#ORD-{order.OrderID}</td>
+                    <td className="px-6 py-3 text-slate-700">{order.CustomerName}</td>
+                    <td className="px-6 py-3 font-black text-slate-900">{formatCurrency(order.TotalPrice)}</td>
+                    <td className="px-6 py-3">
+                       <span className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase">{order.Status}</span>
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-900">{formatCurrency(order.TotalPrice)}</td>
-                    <td className="px-6 py-4">{getStatusBadge(order.Status)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -123,21 +104,28 @@ export const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">System Notifications</h2>
+        {/* 4. Notifications gọn hơn */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <h2 className="text-base font-black text-slate-800 mb-6 flex items-center gap-2">
+             <Bell size={16} className="text-blue-500" /> Notifications
+          </h2>
           <div className="space-y-6">
             <div className="flex gap-4">
-              <div className="w-2 h-2 mt-2 rounded-full bg-red-500 animate-pulse"></div>
+              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0">
+                <PackageSearch size={16} />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">Low Stock Alert</p>
-                <p className="text-xs text-gray-500 mt-1">Check inventory for items under 5 units.</p>
+                <p className="text-xs font-bold text-slate-800 leading-none">Low Stock Alert</p>
+                <p className="text-[10px] text-slate-400 mt-1">Bomber Jacket Black (L) is almost out.</p>
               </div>
             </div>
             <div className="flex gap-4">
-              <div className="w-2 h-2 mt-2 rounded-full bg-blue-500"></div>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 flex-shrink-0">
+                <UserPlus size={16} />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">New Order</p>
-                <p className="text-xs text-gray-500 mt-1">A new order is waiting for confirmation.</p>
+                <p className="text-xs font-bold text-slate-800 leading-none">New Customer</p>
+                <p className="text-[10px] text-slate-400 mt-1">New user registered.</p>
               </div>
             </div>
           </div>
