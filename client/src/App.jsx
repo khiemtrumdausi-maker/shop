@@ -7,6 +7,9 @@ import Shop from './pages/customer/Shop';
 import About from './pages/customer/About'; 
 import Contact from './pages/customer/Contact';
 import Profile from './pages/customer/Profile';
+// Thêm import OrderHistory với ngoặc nhọn { } để đồng bộ với Admin
+import { OrderHistory } from './pages/customer/OrderHistory'; 
+
 import AdminLayout from './components/AdminLayout'; 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminProducts } from './pages/admin/AdminProducts';
@@ -31,22 +34,31 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* --- AUTH ROUTES --- */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* --- CUSTOMER ROUTES --- */}
         <Route path="/" element={<HomeRedirect />} /> 
         <Route path="/cart" element={<Cart />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} /> 
         <Route path="/contact" element={<Contact />} />
         <Route path="/profile" element={<Profile />} />
+        {/* Route Lịch sử đơn hàng mới thêm */}
+        <Route path="/order-history" element={<OrderHistory />} />
 
+        {/* --- ADMIN ROUTES --- */}
         <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><AdminLayout><AdminProducts /></AdminLayout></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><AdminLayout><AdminOrders /></AdminLayout></AdminRoute>} />
         <Route path="/admin/customers" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
+
+        {/* --- 404 REDIRECT --- */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
 }
+
 export default App;

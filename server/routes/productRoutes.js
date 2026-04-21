@@ -47,7 +47,7 @@ router.get('/:id/sizes', productController.getProductSizes);
 // 7. Lấy toàn bộ Size chuẩn (S, M, L, XL)
 router.get('/sizes/all', productController.getAllSizes);
 
-// 8. Cập nhật số lượng tồn kho
+// 8. Cập nhật số lượng tồn kho (Dùng cho Modal Box cập nhật nhiều size)
 router.post('/stock/update', productController.updateStock);
 
 module.exports = router;

@@ -2,16 +2,16 @@
 const db = require('../config/db');
 
 class UserModel {
-  // 1. Kiểm tra đăng nhập
+  // 1. Kiểm tra đăng nhập (Bỏ Status = "Active" ở đây để Controller xử lý thông báo riêng)
   static async findByCredentials(email, password) {
     const [rows] = await db.execute(
-      'SELECT * FROM users WHERE Email = ? AND Password = ? AND Status = "Active"', 
+      'SELECT * FROM users WHERE Email = ? AND Password = ?', 
       [email, password]
     );
-    return rows[0]; // Trả về user nếu đúng, trả về undefined nếu sai
+    return rows[0]; 
   }
 
-  // 2. Kiểm tra email đã tồn tại chưa
+  // 2. Kiểm tra email tồn tại
   static async findByEmail(email) {
     const [rows] = await db.execute('SELECT * FROM users WHERE Email = ?', [email]);
     return rows;
@@ -21,7 +21,7 @@ class UserModel {
   static async create(userData) {
     const { name, email, password, phone, address } = userData;
     const [result] = await db.execute(
-      'INSERT INTO users (Name, Email, Password, Phone, Address, Role, Status) VALUES (?, ?, ?, ?, ?, "Customer", "Active")',
+      'INSERT INTO users (FullName, Email, Password, PhoneNumber, Address, Role, Status) VALUES (?, ?, ?, ?, ?, "Customer", "Active")',
       [name, email, password, phone, address]
     );
     return result;
@@ -31,13 +31,22 @@ class UserModel {
   static async update(userId, userData) {
     const { name, phone, address } = userData;
     const [result] = await db.execute(
-      'UPDATE users SET Name = ?, Phone = ?, Address = ? WHERE UserID = ?',
+      'UPDATE users SET FullName = ?, PhoneNumber = ?, Address = ? WHERE UserID = ?',
       [name, phone, address, userId]
     );
     return result;
   }
 
-  // 5. Lấy tất cả người dùng (Cho trang Admin)
+  // 7. [MỚI] Cập nhật riêng trạng thái (Dùng cho Admin Toggle Status)
+  static async updateStatus(userId, status) {
+    const [result] = await db.execute(
+      'UPDATE users SET Status = ? WHERE UserID = ?',
+      [status, userId]
+    );
+    return result;
+  }
+
+  // 5. Lấy tất cả người dùng
   static async getAll() {
     const [rows] = await db.execute('SELECT * FROM users ORDER BY UserID DESC');
     return rows;

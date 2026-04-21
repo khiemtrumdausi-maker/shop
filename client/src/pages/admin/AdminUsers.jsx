@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Edit3, Trash2, User, X, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
+import { Search, UserPlus, Edit3, Trash2, User, X, Mail, Phone, MapPin, ShieldCheck, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -25,6 +25,19 @@ export const AdminUsers = () => {
     }
   };
 
+  // --- HÀM ĐỔI TRẠNG THÁI TÀI KHOẢN (MỚI) ---
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const res = await axios.patch(`http://localhost:3000/api/auth/users/${userId}/status`, {
+        currentStatus: currentStatus
+      });
+      toast.success(`User is now ${res.data.newStatus}`);
+      loadUsers(); // Reload to update UI
+    } catch (error) {
+      toast.error('Could not update user status');
+    }
+  };
+
   const openModal = (user = null) => {
     if (user) {
       setEditingUser(user);
@@ -39,13 +52,14 @@ export const AdminUsers = () => {
   const closeModal = () => { setIsModalOpen(false); setEditingUser(null); };
 
   const stats = [
-    { label: 'TỔNG CỘNG', value: users.length, color: 'text-slate-800' },
-    { label: 'QUẢN TRỊ', value: users.filter(u => u.Role === 'Admin').length, color: 'text-violet-600' },
-    { label: 'KHÁCH HÀNG', value: users.filter(u => u.Role === 'Customer').length, color: 'text-blue-600' },
+    { label: 'TOTAL USERS', value: users.length, color: 'text-slate-800' },
+    { label: 'ADMINISTRATORS', value: users.filter(u => u.Role === 'Admin').length, color: 'text-violet-600' },
+    { label: 'CUSTOMERS', value: users.filter(u => u.Role === 'Customer').length, color: 'text-blue-600' },
   ];
 
   const filteredUsers = users.filter(u => 
-    (u.Name?.toLowerCase().includes(searchTerm.toLowerCase()) || u.Email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    ((u.Name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+     (u.Email || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
     (filterRole === 'all' || u.Role === filterRole)
   );
 
@@ -53,15 +67,15 @@ export const AdminUsers = () => {
     <div className="w-full font-sans">
       <div className="flex justify-between items-center mb-6 mt-0">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Quản Lý Người Dùng</h1>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Hệ thống phân quyền & hồ sơ</p>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">User Management</h1>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Permission System & Profiles</p>
         </div>
         <button onClick={() => openModal()} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:scale-105 transition-all">
-          <UserPlus size={18} /> Thêm Thành Viên
+          <UserPlus size={18} /> Add New User
         </button>
       </div>
 
-      {/* Stats - 3 Thẻ lớn */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {stats.map((stat, idx) => (
           <div key={idx} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
@@ -76,7 +90,7 @@ export const AdminUsers = () => {
         <div className="flex-1 flex items-center gap-3 px-3">
           <Search size={20} className="text-slate-400" />
           <input
-            type="text" placeholder="Tìm tên, email hoặc số điện thoại..."
+            type="text" placeholder="Search by name, email or phone..."
             className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-600 outline-none"
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -85,22 +99,22 @@ export const AdminUsers = () => {
           className="bg-slate-50 border-none rounded-xl text-xs font-black text-slate-500 px-6 py-3 outline-none cursor-pointer"
           value={filterRole} onChange={(e) => setFilterRole(e.target.value)}
         >
-          <option value="all">TẤT CẢ VAI TRÒ</option>
+          <option value="all">ALL ROLES</option>
           <option value="Admin">ADMIN</option>
           <option value="Customer">CUSTOMER</option>
         </select>
       </div>
 
-      {/* Table - Đầy đủ cột như Database */}
+      {/* Main Table */}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden mb-10">
         <table className="w-full text-left">
           <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
             <tr>
-              <th className="px-8 py-5">Người dùng</th>
-              <th className="px-8 py-5">Liên hệ</th>
-              <th className="px-8 py-5">Địa chỉ</th>
-              <th className="px-8 py-5 text-center">Vai trò</th>
-              <th className="px-8 py-5 text-center">Thao tác</th>
+              <th className="px-8 py-5">User Profile</th>
+              <th className="px-8 py-5">Contact Details</th>
+              <th className="px-8 py-5">Location</th>
+              <th className="px-8 py-5 text-center">Status</th>
+              <th className="px-8 py-5 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 text-sm font-medium">
@@ -113,7 +127,7 @@ export const AdminUsers = () => {
                     </div>
                     <div>
                       <p className="font-black text-slate-800 leading-none">{user.Name}</p>
-                      <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">ID: #USR-{user.UserID}</p>
+                      <span className="text-[9px] font-black uppercase text-slate-400 mt-1">ID: #USR-{user.UserID} • {user.Role}</span>
                     </div>
                   </div>
                 </td>
@@ -126,16 +140,26 @@ export const AdminUsers = () => {
                 <td className="px-8 py-5 max-w-[200px]">
                   <div className="flex items-start gap-2 text-slate-500 text-xs italic">
                     <MapPin size={14} className="mt-0.5 text-slate-300 shrink-0"/> 
-                    <span className="line-clamp-2">{user.Address || 'Chưa cập nhật'}</span>
+                    <span className="line-clamp-2">{user.Address || 'No address set'}</span>
                   </div>
                 </td>
+                
+                {/* CỘT STATUS: CLICK ĐỂ TOGGLE */}
                 <td className="px-8 py-5 text-center">
-                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${
-                    user.Role === 'Admin' ? 'bg-violet-50 text-violet-600 border-violet-100' : 'bg-blue-50 text-blue-600 border-blue-100'
-                  }`}>
-                    {user.Role}
-                  </span>
+                  <button 
+                    onClick={() => handleToggleStatus(user.UserID, user.Status)}
+                    className={`group relative px-3 py-1.5 rounded-lg text-[10px] font-black uppercase border transition-all duration-300 ${
+                      user.Status === 'Active' 
+                      ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-600 hover:text-white' 
+                      : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white'
+                    }`}
+                    title="Click to toggle account status"
+                  >
+                    <span className="group-hover:hidden">{user.Status || 'Active'}</span>
+                    <span className="hidden group-hover:inline">Toggle</span>
+                  </button>
                 </td>
+
                 <td className="px-8 py-5 text-center">
                   <div className="flex justify-center gap-2">
                     <button onClick={() => openModal(user)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={18} /></button>
@@ -148,25 +172,33 @@ export const AdminUsers = () => {
         </table>
       </div>
 
-      {/* Modal - Đầy đủ ô nhập liệu */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 font-black">
-              <h2 className="text-lg text-slate-800 w-full text-center">{editingUser ? 'Cập Nhật Hồ Sơ' : 'Tạo Tài Khoản Mới'}</h2>
-              <button onClick={closeModal} className="absolute right-8 p-2 hover:bg-slate-100 rounded-full"><X size={20}/></button>
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+              <h2 className="text-lg font-black text-slate-800 w-full text-center">{editingUser ? 'UPDATE USER PROFILE' : 'CREATE NEW ACCOUNT'}</h2>
+              <button onClick={closeModal} className="absolute right-8 p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
             </div>
             <form className="p-8 grid grid-cols-2 gap-4">
-              <input placeholder="Họ và tên" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" value={formData.Name} onChange={(e) => setFormData({...formData, Name: e.target.value})} />
-              <input placeholder="Email" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" value={formData.Email} onChange={(e) => setFormData({...formData, Email: e.target.value})} />
-              <input placeholder="Số điện thoại" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" value={formData.Phone} onChange={(e) => setFormData({...formData, Phone: e.target.value})} />
-              <input placeholder="Địa chỉ" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" value={formData.Address} onChange={(e) => setFormData({...formData, Address: e.target.value})} />
-              <select className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Role} onChange={(e) => setFormData({...formData, Role: e.target.value})}>
-                <option value="Customer">Khách hàng (Customer)</option>
-                <option value="Admin">Quản trị viên (Admin)</option>
-              </select>
+              <input placeholder="Full Name" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Name} onChange={(e) => setFormData({...formData, Name: e.target.value})} />
+              <input placeholder="Email Address" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Email} onChange={(e) => setFormData({...formData, Email: e.target.value})} />
+              <input placeholder="Phone Number" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Phone} onChange={(e) => setFormData({...formData, Phone: e.target.value})} />
+              <input placeholder="Shipping Address" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Address} onChange={(e) => setFormData({...formData, Address: e.target.value})} />
+              
+              <div className="col-span-2 grid grid-cols-2 gap-4">
+                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Role} onChange={(e) => setFormData({...formData, Role: e.target.value})}>
+                    <option value="Customer">Customer</option>
+                    <option value="Admin">Administrator</option>
+                </select>
+                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Status} onChange={(e) => setFormData({...formData, Status: e.target.value})}>
+                    <option value="Active">Active</option>
+                    <option value="Banned">Banned</option>
+                </select>
+              </div>
+
               <button type="button" className="col-span-2 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all mt-2">
-                {editingUser ? 'Lưu Thay Đổi' : 'Tạo Người Dùng'}
+                {editingUser ? 'SAVE CHANGES' : 'CREATE ACCOUNT'}
               </button>
             </form>
           </div>

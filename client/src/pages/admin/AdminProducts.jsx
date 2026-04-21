@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, Search, X, Box, Upload } from 'lucide-react';
+import { Plus, Edit3, Trash2, Search, X, Box, Upload, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -8,6 +8,12 @@ export const AdminProducts = () => {
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // States cho Quản lý kho
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [currentStockProduct, setCurrentStockProduct] = useState(null);
+  const [tempStocks, setTempStocks] = useState({}); // Lưu { sizeId: stock }
+
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -42,17 +48,40 @@ export const AdminProducts = () => {
     } catch (error) { console.error("Error loading categories"); }
   };
 
-  // --- HÀM ĐỔI TRẠNG THÁI NHANH (MỚI) ---
+  // --- QUẢN LÝ KHO (INVENTORY) ---
+  const openStockModal = async (product) => {
+    setCurrentStockProduct(product);
+    try {
+      const res = await axios.get(`http://localhost:3000/api/products/${product.ProductID}/sizes`);
+      // Chuyển mảng từ API thành object để dễ quản lý trong input
+      const stockObj = {};
+      res.data.forEach(s => stockObj[s.SizeID] = s.Stock);
+      setTempStocks(stockObj);
+      setIsStockModalOpen(true);
+    } catch (e) { toast.error("Không lấy được dữ liệu kho"); }
+  };
+
+  const handleSaveStock = async () => {
+    try {
+      await axios.post('http://localhost:3000/api/products/stock/update', {
+        productId: currentStockProduct.ProductID,
+        stocks: tempStocks
+      });
+      toast.success("Cập nhật kho hàng thành công!");
+      setIsStockModalOpen(false);
+      loadProducts();
+    } catch (e) { toast.error("Lỗi khi lưu kho"); }
+  };
+
+  // --- TRẠNG THÁI (STATUS) ---
   const handleToggleStatus = async (productId, currentStatus) => {
     try {
       const res = await axios.patch(`http://localhost:3000/api/products/${productId}/status`, {
         currentStatus: currentStatus
       });
       toast.success(`Product is now ${res.data.newStatus}`);
-      loadProducts(); // Load lại để cập nhật màu nút trên bảng
-    } catch (error) {
-      toast.error('Could not update status');
-    }
+      loadProducts();
+    } catch (error) { toast.error('Could not update status'); }
   };
 
   const handleFileChange = (e) => { setSelectedFile(e.target.files[0]); };
@@ -88,9 +117,7 @@ export const AdminProducts = () => {
       toast.success('Thành công!');
       loadProducts();
       closeModal();
-    } catch (error) {
-      toast.error('Lỗi khi lưu!');
-    }
+    } catch (error) { toast.error('Lỗi khi lưu!'); }
   };
 
   const handleDelete = async (id) => {
@@ -196,9 +223,8 @@ export const AdminProducts = () => {
                     {product.CategoryName || 'N/A'}
                   </span>
                 </td>
-                <td className="px-8 py-4 font-black text-slate-900">${Number(product.Price).toLocaleString()}</td>
+                <td className="px-8 py-4 font-black text-slate-900">{Number(product.Price).toLocaleString()}đ</td>
                 
-                {/* CỘT STATUS ĐÃ NÂNG CẤP THÀNH NÚT BẤM */}
                 <td className="px-8 py-4 text-center">
                   <button 
                     onClick={() => handleToggleStatus(product.ProductID, product.Status)}
@@ -216,6 +242,14 @@ export const AdminProducts = () => {
 
                 <td className="px-8 py-4 text-center text-slate-400">
                   <div className="flex justify-center gap-2">
+                    {/* NÚT QUẢN LÝ KHO (CHIẾC HỘP) */}
+                    <button 
+                        onClick={() => openStockModal(product)} 
+                        className="p-2 hover:text-orange-500 transition-all hover:bg-orange-50 rounded-xl"
+                        title="Manage Stock"
+                    >
+                        <Box size={18}/>
+                    </button>
                     <button onClick={() => openModal(product)} className="p-2 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-xl"><Edit3 size={18}/></button>
                     <button onClick={() => handleDelete(product.ProductID)} className="p-2 hover:text-red-600 transition-all hover:bg-red-50 rounded-xl"><Trash2 size={18}/></button>
                   </div>
@@ -224,15 +258,46 @@ export const AdminProducts = () => {
             ))}
           </tbody>
         </table>
-        {filteredProducts.length === 0 && (
-          <div className="py-20 text-center flex flex-col items-center gap-3 text-slate-300">
-            <Box size={48} strokeWidth={1} />
-            <p className="text-sm font-bold">No products found</p>
-          </div>
-        )}
       </div>
 
-      {/* Modal */}
+      {/* MODAL QUẢN LÝ KHO (STOCK) */}
+      {isStockModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-sm w-full p-8 animate-in zoom-in duration-200">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-orange-100 text-orange-600 rounded-2xl"><Package size={24}/></div>
+                <div>
+                    <h2 className="text-lg font-black text-slate-800 leading-tight">Stock Inventory</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{currentStockProduct?.ProductName}</p>
+                </div>
+            </div>
+
+            <div className="space-y-3 mb-8">
+                {Object.entries(tempStocks).map(([sizeId, qty]) => {
+                    const sizeNames = { 1: 'S', 2: 'M', 3: 'L', 4: 'XL' };
+                    return (
+                        <div key={sizeId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                            <span className="font-black text-slate-700">Size {sizeNames[sizeId] || sizeId}</span>
+                            <input 
+                                type="number" 
+                                className="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-bold outline-none focus:ring-2 focus:ring-orange-500"
+                                value={qty}
+                                onChange={(e) => setTempStocks({...tempStocks, [sizeId]: parseInt(e.target.value) || 0})}
+                            />
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="flex gap-3">
+                <button onClick={handleSaveStock} className="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-black shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all">UPDATE STOCK</button>
+                <button onClick={() => setIsStockModalOpen(false)} className="px-6 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black">CLOSE</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL THÊM/SỬA SẢN PHẨM */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden p-8 animate-in zoom-in duration-200">
@@ -246,50 +311,32 @@ export const AdminProducts = () => {
                 placeholder="Product description..." rows={2} className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" 
                 value={formData.Description} onChange={e => setFormData({...formData, Description: e.target.value})} 
               />
-              
               <div className="grid grid-cols-2 gap-4">
                 <input 
                   type="number" placeholder="Price" className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" 
                   value={formData.Price} onChange={e => setFormData({...formData, Price: e.target.value})} required 
                 />
-                <select 
-                  className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none"
-                  value={formData.CategoryID} onChange={e => setFormData({...formData, CategoryID: e.target.value})}
-                >
+                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.CategoryID} onChange={e => setFormData({...formData, CategoryID: e.target.value})}>
                   {categories.map(cat => (
                     <option key={cat.CategoryID} value={cat.CategoryID}>{cat.CategoryName}</option>
                   ))}
                 </select>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
-                <select 
-                  className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none"
-                  value={formData.Gender} onChange={e => setFormData({...formData, Gender: e.target.value})}
-                >
-                  <option value="Unisex">Unisex</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
+                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Gender} onChange={e => setFormData({...formData, Gender: e.target.value})}>
+                  <option value="Unisex">Unisex</option><option value="Male">Male</option><option value="Female">Female</option>
                 </select>
-                <select 
-                  className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none"
-                  value={formData.Status} onChange={e => setFormData({...formData, Status: e.target.value})}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Status} onChange={e => setFormData({...formData, Status: e.target.value})}>
+                  <option value="Active">Active</option><option value="Inactive">Inactive</option>
                 </select>
               </div>
-
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-100 border-dashed rounded-3xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-2 text-slate-300" />
-                    <p className="text-[10px] text-slate-400 font-black uppercase text-center px-4">{selectedFile ? selectedFile.name : "Click to select image"}</p>
-                  </div>
-                  <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                </label>
-              </div>
-
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-100 border-dashed rounded-3xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-2 text-slate-300" />
+                  <p className="text-[10px] text-slate-400 font-black uppercase text-center px-4">{selectedFile ? selectedFile.name : "Click to select image"}</p>
+                </div>
+                <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+              </label>
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">SAVE PRODUCT</button>
                 <button type="button" onClick={closeModal} className="px-8 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black">CANCEL</button>

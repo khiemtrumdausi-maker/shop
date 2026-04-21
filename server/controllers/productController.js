@@ -62,23 +62,15 @@ const updateProduct = async (req, res) => {
     }
 };
 
-// 8. [MỚI] Đổi trạng thái nhanh (Toggle Status)
+// 8. Đổi trạng thái nhanh (Toggle Status)
 const toggleStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { currentStatus } = req.body;
-        
-        // Đảo ngược trạng thái
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-
-        // Gọi Model cập nhật riêng cột Status (Tái sử dụng hàm update hoặc viết hàm riêng)
-        // Ở đây mình viết logic trực tiếp để Khiêm dễ hình dung
-        const ProductModel = require('../models/ProductModel');
         await ProductModel.updateStatus(id, newStatus);
-
         res.status(200).json({ message: 'Status updated!', newStatus });
     } catch (error) {
-        console.error("Lỗi đổi trạng thái:", error);
         res.status(500).json({ message: 'Lỗi server', error });
     }
 };
@@ -94,7 +86,7 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-// 5. Lấy TẤT CẢ size và tồn kho
+// 5. Lấy TẤT CẢ size và tồn kho (Dùng để hiện lên Modal Box)
 const getProductSizes = async (req, res) => {
     try {
         const productId = req.params.id;
@@ -115,13 +107,21 @@ const getAllSizes = async (req, res) => {
     }
 };
 
-// 7. Cập nhật số lượng kho hàng
+// 7. CẬP NHẬT KHO HÀNG (Hàm này đã được nâng cấp cho tính năng Box)
 const updateStock = async (req, res) => {
-    const { productId, sizeId, stock } = req.body;
     try {
-        await InventoryModel.updateStock(productId, sizeId, stock);
+        const { productId, stocks } = req.body; // stocks: { "1": 50, "2": 30 }
+        
+        // Lặp qua object stocks để cập nhật từng size một vào bảng productsize
+        const promises = Object.entries(stocks).map(([sizeId, stock]) => {
+            return ProductModel.updateStock(productId, sizeId, stock);
+        });
+
+        await Promise.all(promises);
+        
         res.status(200).json({ message: 'Cập nhật kho hàng thành công!' });
     } catch (error) {
+        console.error('Lỗi cập nhật kho:', error);
         res.status(500).json({ message: 'Lỗi server khi cập nhật kho' });
     }
 };
@@ -130,7 +130,7 @@ module.exports = {
     getAllProducts, 
     addProduct, 
     updateProduct, 
-    toggleStatus, // <--- EXPORT HÀM MỚI
+    toggleStatus, 
     deleteProduct, 
     getProductSizes,
     getAllSizes, 

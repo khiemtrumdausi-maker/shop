@@ -30,7 +30,6 @@ export default function Header() {
 
   useEffect(() => {
     fetchCartCount();
-    // Lắng nghe sự kiện để cập nhật số lượng khi thêm/xóa ở các trang khác
     window.addEventListener('cartUpdated', fetchCartCount);
     return () => window.removeEventListener('cartUpdated', fetchCartCount);
   }, [user]);
@@ -65,12 +64,12 @@ export default function Header() {
         <span style={location.pathname === '/contact' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/contact')}>Liên Hệ</span>
       </div>
 
-      {/* ICON GIỎ HÀNG & USER MENU */}
+      {/* ICON TIỆN ÍCH */}
       <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: '25px', paddingLeft: '25px', borderLeft: `2px solid #f1f5f9` }}>
         
         {/* GIỎ HÀNG */}
         <div onClick={() => navigate('/cart')} style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={location.pathname === '/cart' ? colors.primary : colors.textLight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={location.pathname === '/cart' ? colors.primary : colors.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1"></circle>
             <circle cx="20" cy="21" r="1"></circle>
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -82,11 +81,11 @@ export default function Header() {
           )}
         </div>
         
-        {/* DROPDOWN USER */}
+        {/* DROPDOWN USER (NƠI CHỨA LỊCH SỬ ĐƠN HÀNG) */}
         <div style={{ position: 'relative' }}>
           <div onClick={() => setShowUserMenu(!showUserMenu)} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
             <div style={{ width: '38px', height: '38px', flexShrink: 0, backgroundColor: '#f1f5f9', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: colors.primary }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
@@ -102,21 +101,34 @@ export default function Header() {
           {showUserMenu && (
             <div style={{ position: 'absolute', top: '55px', right: '0', backgroundColor: 'white', boxShadow: colors.shadow, borderRadius: '12px', width: '220px', overflow: 'hidden', border: `1px solid ${colors.border}`, zIndex: 2000 }}>
               
-              {/* NÚT CHỈNH SỬA THÔNG TIN */}
+              {/* TRANG CÁ NHÂN */}
               <div 
                 onClick={() => { navigate('/profile'); setShowUserMenu(false); }} 
-                style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: colors.textLight, fontWeight: '500', transition: 'all 0.2s' }}
+                style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px', color: colors.textLight, fontWeight: '600', transition: 'all 0.2s' }}
                 onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = colors.primary; }}
                 onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = colors.textLight; }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                Cập nhật thông tin
+                Thông tin cá nhân
               </div>
 
-              {/* NÚT ĐĂNG XUẤT */}
+              {/* LỊCH SỬ ĐƠN HÀNG (QUAN TRỌNG) */}
+              <div 
+                onClick={() => { navigate('/order-history'); setShowUserMenu(false); }} 
+                style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px', color: colors.textLight, fontWeight: '600', transition: 'all 0.2s', borderTop: `1px solid #f8fafc` }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = colors.primary; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = colors.textLight; }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/>
+                </svg>
+                Lịch sử đơn hàng
+              </div>
+
+              {/* ĐĂNG XUẤT */}
               <div 
                 onClick={handleLogout} 
-                style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', gap: '10px', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: '500', borderTop: `1px solid #f1f5f9`, transition: 'all 0.2s' }}
+                style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: '600', borderTop: `1px solid #f8fafc`, transition: 'all 0.2s' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
               >
