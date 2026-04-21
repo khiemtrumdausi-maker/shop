@@ -42,6 +42,19 @@ export const AdminProducts = () => {
     } catch (error) { console.error("Error loading categories"); }
   };
 
+  // --- HÀM ĐỔI TRẠNG THÁI NHANH (MỚI) ---
+  const handleToggleStatus = async (productId, currentStatus) => {
+    try {
+      const res = await axios.patch(`http://localhost:3000/api/products/${productId}/status`, {
+        currentStatus: currentStatus
+      });
+      toast.success(`Product is now ${res.data.newStatus}`);
+      loadProducts(); // Load lại để cập nhật màu nút trên bảng
+    } catch (error) {
+      toast.error('Could not update status');
+    }
+  };
+
   const handleFileChange = (e) => { setSelectedFile(e.target.files[0]); };
 
   const handleSubmit = async (e) => {
@@ -55,12 +68,9 @@ export const AdminProducts = () => {
       data.append('Gender', formData.Gender);
       data.append('Status', formData.Status);
 
-      // LOGIC THÔNG MINH:
       if (selectedFile) {
-        // Nếu có chọn file mới -> Gửi file
         data.append('Image', selectedFile);
       } else if (editingProduct) {
-        // Nếu không chọn file mới và đang ở chế độ SỬA -> Gửi lại link ảnh cũ
         data.append('Image', editingProduct.Image);
       }
 
@@ -151,7 +161,7 @@ export const AdminProducts = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
             <tr>
-              <th className="px-6 py-5">ID</th> {/* Cột ID mới */}
+              <th className="px-6 py-5 text-center">ID</th>
               <th className="px-8 py-5">Product</th>
               <th className="px-8 py-5">Category</th>
               <th className="px-8 py-5">Price</th>
@@ -162,7 +172,7 @@ export const AdminProducts = () => {
           <tbody className="divide-y divide-slate-50 text-sm font-medium">
             {filteredProducts.map((product) => (
               <tr key={product.ProductID} className="hover:bg-slate-50/30 transition-colors">
-                <td className="px-6 py-4 font-bold text-slate-400">#{product.ProductID}</td> {/* Hiển thị ID */}
+                <td className="px-6 py-4 font-bold text-center text-slate-400">#{product.ProductID}</td>
                 <td className="px-8 py-4">
                   <div className="flex items-center gap-4">
                     <img 
@@ -186,14 +196,24 @@ export const AdminProducts = () => {
                     {product.CategoryName || 'N/A'}
                   </span>
                 </td>
-                <td className="px-8 py-4 font-black text-slate-900">${Number(product.Price).toFixed(2)}</td>
+                <td className="px-8 py-4 font-black text-slate-900">${Number(product.Price).toLocaleString()}</td>
+                
+                {/* CỘT STATUS ĐÃ NÂNG CẤP THÀNH NÚT BẤM */}
                 <td className="px-8 py-4 text-center">
-                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
-                    product.Status === 'Active' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
-                  }`}>
-                    {product.Status}
-                  </span>
+                  <button 
+                    onClick={() => handleToggleStatus(product.ProductID, product.Status)}
+                    className={`group relative px-3 py-1.5 rounded-lg text-[10px] font-black uppercase border transition-all duration-300 ${
+                      product.Status === 'Active' 
+                      ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-600 hover:text-white' 
+                      : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white'
+                    }`}
+                    title="Click to toggle status"
+                  >
+                    <span className="group-hover:hidden">{product.Status}</span>
+                    <span className="hidden group-hover:inline">Toggle</span>
+                  </button>
                 </td>
+
                 <td className="px-8 py-4 text-center text-slate-400">
                   <div className="flex justify-center gap-2">
                     <button onClick={() => openModal(product)} className="p-2 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-xl"><Edit3 size={18}/></button>
@@ -229,7 +249,7 @@ export const AdminProducts = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <input 
-                  type="number" placeholder="Price ($)" className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" 
+                  type="number" placeholder="Price" className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" 
                   value={formData.Price} onChange={e => setFormData({...formData, Price: e.target.value})} required 
                 />
                 <select 
@@ -264,7 +284,7 @@ export const AdminProducts = () => {
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-100 border-dashed rounded-3xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-2 text-slate-300" />
-                    <p className="text-[10px] text-slate-400 font-black uppercase">{selectedFile ? selectedFile.name : "Click to select image"}</p>
+                    <p className="text-[10px] text-slate-400 font-black uppercase text-center px-4">{selectedFile ? selectedFile.name : "Click to select image"}</p>
                   </div>
                   <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                 </label>

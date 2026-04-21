@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-// Đường dẫn MỚI (đúng)
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
@@ -43,9 +42,7 @@ export default function Cart() {
     else setSelectedIds(cartItems.map(item => item.CartItemID));
   };
 
-  // --- HÀM CẬP NHẬT SỐ LƯỢNG: ĐÃ FIX LỖI GIẢM TỪ 1 XUỐNG ---
   const updateQuantity = async (cartItemId, newQty, stock) => {
-    // Nếu đang là 1 mà bấm trừ (newQty = 0) -> XÓA LUÔN
     if (newQty < 1) {
       return removeItem(cartItemId); 
     }
@@ -58,12 +55,9 @@ export default function Cart() {
 
     try {
       await axios.put(`http://localhost:3000/api/cart/update/${cartItemId}`, { quantity: newQty });
-      
-      // Cập nhật state tại chỗ cho nhanh
       setCartItems(prev => prev.map(item => 
         item.CartItemID === cartItemId ? { ...item, Quantity: newQty } : item
       ));
-      
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (e) { 
       setToast('❌ Lỗi cập nhật số lượng'); 
@@ -73,13 +67,8 @@ export default function Cart() {
   const removeItem = async (cartItemId) => {
     try {
       await axios.delete(`http://localhost:3000/api/cart/remove/${cartItemId}`);
-      
-      // Sau khi xóa thành công thì fetch lại danh sách
       fetchCart();
-      
-      // Bỏ tích ID đó nếu nó đang được chọn
       setSelectedIds(prev => prev.filter(id => id !== cartItemId));
-      
       window.dispatchEvent(new Event('cartUpdated'));
       setToast('🗑️ Đã xóa sản phẩm');
       setTimeout(() => setToast(''), 2000);
@@ -113,8 +102,8 @@ export default function Cart() {
 
         {cartItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px', backgroundColor: 'white', borderRadius: '32px' }}>
-            <p>Giỏ hàng trống!</p>
-            <button onClick={() => navigate('/shop')} style={{ padding: '12px 30px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Mua ngay</button>
+            <p style={{marginBottom: '20px', fontWeight: 'bold', color: '#64748b'}}>Giỏ hàng của bạn hiện đang trống!</p>
+            <button onClick={() => navigate('/shop')} style={{ padding: '12px 30px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>Tiếp tục mua sắm</button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: '30px', alignItems: 'start' }}>
@@ -127,11 +116,19 @@ export default function Cart() {
                     onChange={() => toggleSelect(item.CartItemID)}
                     style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                   />
-                  <img src={item.Image} style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '10px' }} />
+                  
+                  {/* PHẦN HIỂN THỊ ẢNH ĐÃ FIX URL */}
+                  <img 
+                    src={item.Image?.startsWith('http') ? item.Image : `http://localhost:3000${item.Image}`} 
+                    style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '10px' }} 
+                    onError={(e) => { e.target.src = 'https://placehold.co/100x120?text=No+Image'; }}
+                    alt={item.ProductName}
+                  />
+
                   <div style={{ flex: 1 }}>
                     <h4 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>{item.ProductName}</h4>
                     <p style={{ color: '#64748b', fontSize: '13px' }}>Size: <b>{item.SizeName}</b></p>
-                    <p style={{ fontWeight: '800', fontSize: '18px', marginTop: '10px' }}>{Number(item.Price).toLocaleString()} đ</p>
+                    <p style={{ fontWeight: '800', fontSize: '18px', marginTop: '10px', color: colors.primary }}>{Number(item.Price).toLocaleString()} đ</p>
                   </div>
 
                   <div style={{ textAlign: 'center' }}>
@@ -140,7 +137,7 @@ export default function Cart() {
                       <span style={{ fontWeight: '800', width: '20px' }}>{item.Quantity}</span>
                       <button onClick={() => updateQuantity(item.CartItemID, item.Quantity + 1, item.Stock)} style={{ width: '30px', height: '30px', border: 'none', background: 'white', cursor: 'pointer', fontWeight: 'bold' }}>+</button>
                     </div>
-                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Kho: {item.Stock ?? '...'}</span>
+                    <span style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginTop: '5px' }}>Kho: {item.Stock ?? '...'}</span>
                   </div>
 
                   <button 
@@ -159,7 +156,7 @@ export default function Cart() {
               ))}
             </div>
 
-            <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '25px', border: `1px solid ${colors.border}`, textAlign: 'center' }}>
+            <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '25px', border: `1px solid ${colors.border}`, textAlign: 'center', position: 'sticky', top: '100px' }}>
               <h3 style={{ marginBottom: '25px', fontWeight: 'bold' }}>Tóm tắt đơn hàng</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                 <span style={{ color: '#64748b' }}>Tạm tính:</span>
@@ -177,7 +174,7 @@ export default function Cart() {
               <button 
                 disabled={selectedIds.length === 0}
                 onClick={() => navigate('/checkout', { state: { selectedItems, totalPrice } })}
-                style={{ width: '100%', padding: '18px', backgroundColor: selectedIds.length === 0 ? '#cbd5e1' : colors.primary, color: 'white', border: 'none', borderRadius: '30px', fontWeight: 'bold', cursor: 'pointer' }}
+                style={{ width: '100%', padding: '18px', backgroundColor: selectedIds.length === 0 ? '#cbd5e1' : colors.primary, color: 'white', border: 'none', borderRadius: '30px', fontWeight: 'bold', cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer' }}
               >
                 Tiến hành thanh toán
               </button>

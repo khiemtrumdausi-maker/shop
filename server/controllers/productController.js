@@ -37,14 +37,11 @@ const addProduct = async (req, res) => {
     }
 };
 
-// 7. [MỚI THÊM] Cập nhật sản phẩm (Hàm này giải quyết lỗi của Khiêm đây)
+// 3. Cập nhật sản phẩm (Toàn bộ thông tin)
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const { ProductName, Price, Description, CategoryID, Gender, Status, Image } = req.body;
-
-        // Nếu Multer nhận được file (req.file) -> lấy path mới
-        // Nếu không có file -> lấy lại giá trị Image cũ gửi từ body (chính là link cũ)
         const imagePath = req.file ? `/uploads/${req.file.filename}` : Image;
 
         const updateData = {
@@ -52,7 +49,7 @@ const updateProduct = async (req, res) => {
             ProductName,
             Price: parseFloat(Price),
             Description,
-            Image: imagePath, // Link cũ sẽ được giữ lại ở đây
+            Image: imagePath,
             CategoryID: parseInt(CategoryID),
             Gender,
             Status
@@ -65,7 +62,28 @@ const updateProduct = async (req, res) => {
     }
 };
 
-// 3. Xóa sản phẩm
+// 8. [MỚI] Đổi trạng thái nhanh (Toggle Status)
+const toggleStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { currentStatus } = req.body;
+        
+        // Đảo ngược trạng thái
+        const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+
+        // Gọi Model cập nhật riêng cột Status (Tái sử dụng hàm update hoặc viết hàm riêng)
+        // Ở đây mình viết logic trực tiếp để Khiêm dễ hình dung
+        const ProductModel = require('../models/ProductModel');
+        await ProductModel.updateStatus(id, newStatus);
+
+        res.status(200).json({ message: 'Status updated!', newStatus });
+    } catch (error) {
+        console.error("Lỗi đổi trạng thái:", error);
+        res.status(500).json({ message: 'Lỗi server', error });
+    }
+};
+
+// 4. Xóa sản phẩm
 const deleteProduct = async (req, res) => {
     const { id } = req.params;
     try {
@@ -76,7 +94,7 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-// 4. Lấy TẤT CẢ size và tồn kho
+// 5. Lấy TẤT CẢ size và tồn kho
 const getProductSizes = async (req, res) => {
     try {
         const productId = req.params.id;
@@ -87,7 +105,7 @@ const getProductSizes = async (req, res) => {
     }
 };
 
-// 5. Lấy danh sách toàn bộ Size
+// 6. Lấy danh sách toàn bộ Size
 const getAllSizes = async (req, res) => {
     try {
         const sizes = await SizeModel.getAll();
@@ -97,7 +115,7 @@ const getAllSizes = async (req, res) => {
     }
 };
 
-// 6. Cập nhật số lượng kho hàng
+// 7. Cập nhật số lượng kho hàng
 const updateStock = async (req, res) => {
     const { productId, sizeId, stock } = req.body;
     try {
@@ -108,11 +126,11 @@ const updateStock = async (req, res) => {
     }
 };
 
-// QUAN TRỌNG: Phải export updateProduct ra thì file Router mới gọi được
 module.exports = { 
     getAllProducts, 
     addProduct, 
-    updateProduct, // <--- PHẢI CÓ DÒNG NÀY
+    updateProduct, 
+    toggleStatus, // <--- EXPORT HÀM MỚI
     deleteProduct, 
     getProductSizes,
     getAllSizes, 

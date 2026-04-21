@@ -27,14 +27,13 @@ class ProductModel {
         return result;
     }
 
-    // 3. [QUAN TRỌNG] Cập nhật sản phẩm (HÀM NÀY GIẢI QUYẾT LỖI KẾT NỐI)
+    // 3. Cập nhật toàn bộ thông tin sản phẩm
     static async update(p) {
         const sql = `
             UPDATE products 
             SET ProductName = ?, Price = ?, Description = ?, Image = ?, Gender = ?, CategoryID = ?, Status = ?
             WHERE ProductID = ?
         `;
-        // Truyền đủ 8 tham số tương ứng với các dấu hỏi chấm
         const [result] = await db.execute(sql, [
             p.ProductName, 
             p.Price, 
@@ -45,6 +44,13 @@ class ProductModel {
             p.Status, 
             p.ProductID
         ]);
+        return result;
+    }
+
+    // 6. [MỚI] Cập nhật riêng trạng thái (Dùng cho tính năng toggle nhanh)
+    static async updateStatus(id, status) {
+        const sql = `UPDATE products SET Status = ? WHERE ProductID = ?`;
+        const [result] = await db.execute(sql, [status, id]);
         return result;
     }
 

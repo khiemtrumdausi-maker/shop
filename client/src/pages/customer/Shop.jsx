@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-// Đường dẫn MỚI (đúng)
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
@@ -17,7 +16,7 @@ export default function Shop() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user')) || null;
 
-  // --- STATE MODAL CHỌN SIZE & SỐ LƯỢNG ---
+  // --- STATE MODAL ---
   const [selectedProduct, setSelectedProduct] = useState(null); 
   const [productSizes, setProductSizes] = useState([]); 
   const [selectedSize, setSelectedSize] = useState(null); 
@@ -82,7 +81,9 @@ export default function Shop() {
     } catch (error) { setToast('❌ Lỗi khi thêm!'); }
   };
 
+  // LỌC SẢN PHẨM: Chỉ hiện sản phẩm Active, theo Danh mục và Tìm kiếm
   const filteredProducts = products.filter(p => 
+    p.Status === 'Active' && 
     (activeCategoryId === 0 || p.CategoryID === activeCategoryId) && 
     p.ProductName.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -119,30 +120,49 @@ export default function Shop() {
               </button>
             </div>
           </div>
-          <input type="text" placeholder="Tìm kiếm..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ padding: '10px 20px', borderRadius: '30px', border: `1px solid ${colors.border}`, width: '300px', outline: 'none' }} />
+          <input type="text" placeholder="Tìm kiếm sản phẩm..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ padding: '10px 20px', borderRadius: '30px', border: `1px solid ${colors.border}`, width: '300px', outline: 'none' }} />
         </div>
 
-        {/* LƯỚI SẢN PHẨM CÓ HOVER */}
+        {/* LƯỚI SẢN PHẨM */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
           {filteredProducts.map((product) => (
             <div key={product.ProductID} style={{ backgroundColor: 'white', borderRadius: '20px', padding: '15px', boxShadow: colors.shadow, transition: 'transform 0.3s' }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-              <img src={product.Image} alt={product.ProductName} style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '12px' }} />
+              
+              {/* PHẦN HIỂN THỊ ẢNH ĐÃ SỬA URL */}
+              <div style={{ position: 'relative', width: '100%', height: '300px', overflow: 'hidden', borderRadius: '12px' }}>
+                <img 
+                   src={product.Image?.startsWith('http') ? product.Image : `http://localhost:3000${product.Image}`} 
+                   alt={product.ProductName} 
+                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                   onError={(e) => { e.target.src = 'https://placehold.co/600x400?text=No+Image'; }}
+                />
+                <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(255,255,255,0.9)', padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', color: colors.textLight, textTransform: 'uppercase' }}>
+                  {product.Gender}
+                </div>
+              </div>
+
               <div style={{ padding: '15px 5px' }}>
-                <h3 style={{ margin: '0 0 5px 0' }}>{product.ProductName}</h3>
-                <p style={{ fontWeight: '900', fontSize: '22px', marginBottom: '15px' }}>{Number(product.Price).toLocaleString()} đ</p>
+                <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: 'bold' }}>{product.ProductName}</h3>
+                <p style={{ fontWeight: '900', fontSize: '22px', marginBottom: '15px', color: colors.text }}>{Number(product.Price).toLocaleString()} đ</p>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => openModal(product, 'add')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eff6ff', color: colors.primary, fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }} onMouseOver={(e) => {e.target.style.backgroundColor=colors.primary; e.target.style.color='white'}} onMouseOut={(e) => {e.target.style.backgroundColor='#eff6ff'; e.target.style.color=colors.primary}}>Thêm</button>
-                  <button onClick={() => openModal(product, 'buy')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: colors.primary, color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }} onMouseOver={(e) => e.target.style.backgroundColor=colors.primaryHover} onMouseOut={(e) => e.target.style.backgroundColor=colors.primary}>Mua ngay</button>
+                  <button onClick={() => openModal(product, 'add')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eff6ff', color: colors.primary, fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>Thêm</button>
+                  <button onClick={() => openModal(product, 'buy')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: colors.primary, color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>Mua ngay</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {filteredProducts.length === 0 && !loading && (
+          <div style={{ textAlign: 'center', padding: '100px 0', color: colors.textLight }}>
+            <p fontSize="20px">Hiện không có sản phẩm nào phù hợp.</p>
+          </div>
+        )}
       </div>
 
-      {/* --- MODAL CHỌN SIZE & SỐ LƯỢNG (KHÔI PHỤC CHUẨN ẢNH) --- */}
+      {/* MODAL CHỌN SIZE */}
       {selectedProduct && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000 }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropBlur: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000 }}>
           <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '32px', width: '450px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '8px' }}>{selectedProduct.ProductName}</h2>
             <p style={{ color: colors.primary, fontWeight: '900', fontSize: '26px', marginBottom: '30px' }}>{Number(selectedProduct.Price).toLocaleString()} đ</p>
@@ -151,7 +171,7 @@ export default function Shop() {
             <div style={{ display: 'flex', gap: '12px', marginBottom: '30px', justifyContent: 'center' }}>
               {productSizes.map((s) => (
                 <button key={s.SizeID} disabled={s.Stock === 0} onClick={() => setSelectedSize(s)}
-                  style={{ width: '60px', height: '45px', borderRadius: '12px', cursor: s.Stock === 0 ? 'not-allowed' : 'pointer', border: selectedSize?.SizeID === s.SizeID ? `2px solid ${colors.primary}` : `1px solid ${colors.border}`, backgroundColor: selectedSize?.SizeID === s.SizeID ? '#eff6ff' : 'white', fontWeight: 'bold' }}>
+                  style={{ width: '60px', height: '45px', borderRadius: '12px', cursor: s.Stock === 0 ? 'not-allowed' : 'pointer', border: selectedSize?.SizeID === s.SizeID ? `2px solid ${colors.primary}` : `1px solid ${colors.border}`, backgroundColor: selectedSize?.SizeID === s.SizeID ? '#eff6ff' : 'white', fontWeight: 'bold', color: s.Stock === 0 ? '#cbd5e1' : colors.text }}>
                   {s.SizeName}
                 </button>
               ))}
@@ -162,7 +182,6 @@ export default function Shop() {
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))} style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${colors.border}`, background: 'white', fontSize: '20px', cursor: 'pointer' }}>-</button>
               <span style={{ fontSize: '22px', fontWeight: '900', width: '30px' }}>{quantity}</span>
               <button onClick={() => setQuantity(quantity + 1)} style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${colors.border}`, background: 'white', fontSize: '20px', cursor: 'pointer' }}>+</button>
-              {selectedSize && <span style={{ color: '#94a3b8', fontSize: '13px', marginLeft: '10px' }}>Kho: {selectedSize.Stock}</span>}
             </div>
 
             <div style={{ display: 'flex', gap: '15px' }}>

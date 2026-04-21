@@ -9,21 +9,19 @@ const fs = require('fs');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadPath = 'public/uploads/';
-        // Tự động tạo thư mục nếu chưa có để tránh lỗi
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        // Đổi tên file: thời-gian-tên-gốc.jpg
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB cho ảnh
+    limits: { fileSize: 5 * 1024 * 1024 }, 
 });
 
 // --- ROUTES ---
@@ -31,22 +29,25 @@ const upload = multer({
 // 1. Lấy tất cả sản phẩm
 router.get('/', productController.getAllProducts);
 
-// 2. Thêm sản phẩm mới (Nhận ảnh từ máy tính)
+// 2. Thêm sản phẩm mới
 router.post('/', upload.single('Image'), productController.addProduct);
 
-// 3. Cập nhật sản phẩm (Sửa sản phẩm - ĐÃ THÊM)
+// 3. Cập nhật sản phẩm (Toàn bộ thông tin)
 router.put('/:id', upload.single('Image'), productController.updateProduct);
 
-// 4. Xóa sản phẩm
+// 4. [MỚI] Đổi trạng thái nhanh (Chỉ cập nhật Status)
+router.patch('/:id/status', productController.toggleStatus);
+
+// 5. Xóa sản phẩm
 router.delete('/:id', productController.deleteProduct);
 
-// 5. Lấy size và tồn kho của 1 SP cụ thể
+// 6. Lấy size và tồn kho của 1 SP cụ thể
 router.get('/:id/sizes', productController.getProductSizes);
 
-// 6. Lấy toàn bộ Size chuẩn (S, M, L, XL) để Admin chọn
+// 7. Lấy toàn bộ Size chuẩn (S, M, L, XL)
 router.get('/sizes/all', productController.getAllSizes);
 
-// 7. Cập nhật số lượng tồn kho
+// 8. Cập nhật số lượng tồn kho
 router.post('/stock/update', productController.updateStock);
 
 module.exports = router;
