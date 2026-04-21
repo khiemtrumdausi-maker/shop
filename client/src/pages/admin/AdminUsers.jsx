@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Edit3, Trash2, User, X, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
+import { Search, Trash2, User, X, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -7,12 +7,10 @@ export const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  
+  // Giữ lại state Modal phòng trường hợp sếp muốn mở xem thông tin chi tiết
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-
-  const [formData, setFormData] = useState({
-    Name: '', Email: '', Password: '', Phone: '', Address: '', Role: 'Customer', Status: 'Active'
-  });
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => { loadUsers(); }, []);
 
@@ -38,18 +36,27 @@ export const AdminUsers = () => {
     }
   };
 
-  const openModal = (user = null) => {
-    if (user) {
-      setEditingUser(user);
-      setFormData({ ...user, Password: '' });
-    } else {
-      setEditingUser(null);
-      setFormData({ Name: '', Email: '', Password: '', Phone: '', Address: '', Role: 'Customer', Status: 'Active' });
+  // --- HÀM XÓA USER ---
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    try {
+      await axios.delete(`http://localhost:3000/api/auth/users/${userId}`);
+      toast.success("User deleted successfully");
+      loadUsers();
+    } catch (error) {
+      toast.error("Failed to delete user");
     }
+  };
+
+  const openViewModal = (user) => {
+    setSelectedUser(user);
     setIsModalOpen(true);
   };
 
-  const closeModal = () => { setIsModalOpen(false); setEditingUser(null); };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+  };
 
   const stats = [
     { label: 'TOTAL USERS', value: users.length, color: 'text-slate-800' },
@@ -57,7 +64,6 @@ export const AdminUsers = () => {
     { label: 'CUSTOMERS', value: users.filter(u => u.Role === 'Customer').length, color: 'text-blue-600' },
   ];
 
-  // --- LOGIC LỌC: ĐÃ BỎ TÌM KIẾM THEO SỐ ĐIỆN THOẠI ---
   const filteredUsers = users.filter(u => 
     ((u.Name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
      (u.Email || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -69,11 +75,9 @@ export const AdminUsers = () => {
       <div className="flex justify-between items-center mb-6 mt-0">
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">User Management</h1>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Permission System & Profiles</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Permission System & Status Control</p>
         </div>
-        <button onClick={() => openModal()} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:scale-105 transition-all">
-          <UserPlus size={18} /> Add New User
-        </button>
+        {/* NÚT ADD NEW USER ĐÃ BỊ LOẠI BỎ Ở ĐÂY */}
       </div>
 
       {/* Stats Cards */}
@@ -156,7 +160,6 @@ export const AdminUsers = () => {
                       ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-600 hover:text-white' 
                       : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white'
                     }`}
-                    title="Click to toggle account status"
                   >
                     <span className="group-hover:hidden">{user.Status || 'Active'}</span>
                     <span className="hidden group-hover:inline">Toggle</span>
@@ -165,8 +168,14 @@ export const AdminUsers = () => {
 
                 <td className="px-8 py-5 text-center">
                   <div className="flex justify-center gap-2">
-                    <button onClick={() => openModal(user)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={18} /></button>
-                    <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
+                    {/* NÚT EDIT ĐÃ BỊ XÓA Ở ĐÂY, CHỈ CÒN NÚT TRASH */}
+                    <button 
+                      onClick={() => handleDeleteUser(user.UserID)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      title="Delete User"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -175,35 +184,33 @@ export const AdminUsers = () => {
         </table>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
+      {/* Modal View Detail (Tùy chọn: Giữ lại để xem full info nếu cần) */}
+      {isModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-              <h2 className="text-lg font-black text-slate-800 w-full text-center uppercase">{editingUser ? 'Update Profile' : 'Create Account'}</h2>
-              <button onClick={closeModal} className="absolute right-8 p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
-            </div>
-            <form className="p-8 grid grid-cols-2 gap-4">
-              <input placeholder="Full Name" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Name} onChange={(e) => setFormData({...formData, Name: e.target.value})} />
-              <input placeholder="Email Address" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Email} onChange={(e) => setFormData({...formData, Email: e.target.value})} />
-              <input placeholder="Phone Number" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Phone} onChange={(e) => setFormData({...formData, Phone: e.target.value})} />
-              <input placeholder="Shipping Address" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Address} onChange={(e) => setFormData({...formData, Address: e.target.value})} />
-              
-              <div className="col-span-2 grid grid-cols-2 gap-4">
-                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.Role} onChange={(e) => setFormData({...formData, Role: e.target.value})}>
-                    <option value="Customer">Customer</option>
-                    <option value="Admin">Administrator</option>
-                </select>
-                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.Status} onChange={(e) => setFormData({...formData, Status: e.target.value})}>
-                    <option value="Active">Active</option>
-                    <option value="Banned">Banned</option>
-                </select>
-              </div>
-
-              <button type="button" className="col-span-2 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all mt-2">
-                {editingUser ? 'SAVE CHANGES' : 'CREATE ACCOUNT'}
-              </button>
-            </form>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden p-8">
+             <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tighter">User Information</h2>
+                <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
+             </div>
+             <div className="space-y-4 text-left">
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Full Name</p>
+                    <p className="font-bold text-slate-700">{selectedUser.Name}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Email</p>
+                    <p className="font-bold text-slate-700">{selectedUser.Email}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Phone</p>
+                    <p className="font-bold text-slate-700">{selectedUser.Phone || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Address</p>
+                    <p className="font-bold text-slate-700 italic">{selectedUser.Address || 'N/A'}</p>
+                </div>
+             </div>
+             <button onClick={closeModal} className="w-full mt-6 py-4 bg-slate-800 text-white rounded-2xl font-black">CLOSE</button>
           </div>
         </div>
       )}

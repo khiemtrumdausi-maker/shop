@@ -3,10 +3,11 @@ const CartModel = require('../models/CartModel');
 
 // 1. Checkout (Thanh toán đơn hàng)
 const checkout = async (req, res) => {
-    const { UserID, TotalPrice } = req.body;
+    // NHẬN THÊM items từ body (Nếu có là Buy Now, không có là thanh toán Giỏ hàng)
+    const { UserID, TotalPrice, items } = req.body; 
     try {
-        // Hàm này sẽ thực hiện: Tạo đơn, Trừ kho trong bảng productsize, và Xóa giỏ hàng
-        const orderId = await OrderModel.createOrder(UserID, TotalPrice);
+        // Truyền items xuống Model. Model đã được mình sửa để xử lý thông minh vụ này.
+        const orderId = await OrderModel.createOrder(UserID, TotalPrice, items);
         
         res.status(201).json({ 
             message: 'Order placed successfully! Stock has been updated.', 
@@ -15,7 +16,6 @@ const checkout = async (req, res) => {
     } catch (error) {
         console.error('❌ Checkout Error:', error.message);
         
-        // Kiểm tra nếu lỗi trả về có liên quan đến "stock" (hết hàng) thì trả về code 400
         const isStockError = error.message.toLowerCase().includes('stock') || 
                              error.message.toLowerCase().includes('insufficient');
                              
@@ -68,7 +68,6 @@ const updateStatus = async (req, res) => {
     const { status } = req.body;
     try {
         if (status === 'Cancelled') {
-            // Hàm này sẽ tự động cộng lại Stock vào bảng productsize
             await OrderModel.cancelAndRestock(id);
             res.status(200).json({ message: 'Order cancelled and stock restocked!' });
         } else {

@@ -2,7 +2,8 @@ const db = require('../config/db');
 
 class OrderModel {
     // 1. TẠO ĐƠN HÀNG (Transaction: Tạo đơn + Trừ kho + Xóa giỏ)
-    static async createOrder(userId, totalPrice) {
+    // Nâng cấp nhẹ: Thêm tham số items để hỗ trợ Buy Now mà không hỏng logic Cart
+    static async createOrder(userId, totalPrice, directItems = null) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
         try {
@@ -13,19 +14,27 @@ class OrderModel {
             );
             const orderId = orderResult.insertId;
 
-            // Lấy các sản phẩm từ giỏ hàng để đưa vào đơn hàng
-            const [cartItems] = await connection.execute(
-                `SELECT ci.ProductID, ci.SizeID, ci.Quantity, p.Price 
-                 FROM cartitems ci 
-                 JOIN carts c ON ci.CartID = c.CartID 
-                 JOIN products p ON ci.ProductID = p.ProductID 
-                 WHERE c.UserID = ?`,
-                [userId]
-            );
+            let itemsToProcess = [];
 
-            if (cartItems.length === 0) throw new Error("Cart is empty");
+            // Nếu có directItems (Buy Now) thì dùng luôn, không thì mới bốc từ giỏ hàng
+            if (directItems && directItems.length > 0) {
+                itemsToProcess = directItems;
+            } else {
+                // Lấy các sản phẩm từ giỏ hàng để đưa vào đơn hàng
+                const [cartItems] = await connection.execute(
+                    `SELECT ci.ProductID, ci.SizeID, ci.Quantity, p.Price 
+                     FROM cartitems ci 
+                     JOIN carts c ON ci.CartID = c.CartID 
+                     JOIN products p ON ci.ProductID = p.ProductID 
+                     WHERE c.UserID = ?`,
+                    [userId]
+                );
+                itemsToProcess = cartItems;
+            }
 
-            for (let item of cartItems) {
+            if (itemsToProcess.length === 0) throw new Error("Cart is empty");
+
+            for (let item of itemsToProcess) {
                 // KIỂM TRA TỒN KHO THỰC TẾ (Khớp chuẩn bảng productsize, cột Stock)
                 const [stockCheck] = await connection.execute(
                     'SELECT Stock FROM productsize WHERE ProductID = ? AND SizeID = ?',
@@ -55,11 +64,13 @@ class OrderModel {
                 [orderId]
             );
 
-            // XÓA SẠCH GIỎ HÀNG SAU KHI ĐẶT THÀNH CÔNG
-            await connection.execute(
-                'DELETE ci FROM cartitems ci JOIN carts c ON ci.CartID = c.CartID WHERE c.UserID = ?',
-                [userId]
-            );
+            // CHỈ XÓA GIỎ HÀNG NẾU LÀ THANH TOÁN TỪ GIỎ (Không phải Buy Now)
+            if (!directItems) {
+                await connection.execute(
+                    'DELETE ci FROM cartitems ci JOIN carts c ON ci.CartID = c.CartID WHERE c.UserID = ?',
+                    [userId]
+                );
+            }
 
             await connection.commit();
             return orderId;

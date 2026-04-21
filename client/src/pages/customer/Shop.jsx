@@ -61,7 +61,6 @@ export default function Shop() {
     try {
       const response = await axios.get(`http://localhost:3000/api/products/${product.ProductID}/sizes`);
       setProductSizes(response.data);
-      // Mặc định chọn size đầu tiên còn hàng
       const firstAvailableSize = response.data.find(s => s.Stock > 0);
       if(firstAvailableSize) setSelectedSize(firstAvailableSize); 
     } catch (error) { setToast('❌ Error loading sizes!'); }
@@ -69,37 +68,48 @@ export default function Shop() {
 
   // --- LOGIC XỬ LÝ KHI ẤN XÁC NHẬN ---
   const handleConfirmAction = async () => {
-    // 1. Kiểm tra an toàn
     if (!selectedSize) return setToast('⚠️ Please select a size!');
     if (!user) {
       setToast('⚠️ Please login to continue');
       return navigate('/login');
     }
 
-    // 2. KIỂM TRA TỒN KHO TRƯỚC KHI GỬI (Fix lỗi sếp gặp)
     if (quantity > selectedSize.Stock) {
       setToast(`❌ Error: Only ${selectedSize.Stock} items left!`);
       return;
     }
 
     try {
-      // 3. Gọi API thêm vào giỏ hàng (Áp dụng cho cả Add to Cart và Buy Now)
-      const res = await axios.post('http://localhost:3000/api/cart/add', { 
-        UserID: user.id, 
-        ProductID: selectedProduct.ProductID, 
-        SizeID: selectedSize.SizeID, 
-        Quantity: quantity 
-      });
-
-      // Bắn sự kiện cập nhật số lượng giỏ hàng trên Header
-      window.dispatchEvent(new Event('cartUpdated'));
-
       if (actionType === 'buy') {
-        // CASE: MUA NGAY -> Đẩy sang trang Checkout
+        // CASE: BUY NOW -> KHÔNG GỌI API CART, CHỈ TRUYỀN DỮ LIỆU SANG CHECKOUT
+        const directItem = {
+          ProductID: selectedProduct.ProductID,
+          ProductName: selectedProduct.ProductName,
+          Image: selectedProduct.Image,
+          Price: selectedProduct.Price,
+          Quantity: quantity,
+          SizeName: selectedSize.SizeName,
+          SizeID: selectedSize.SizeID
+        };
+
         setSelectedProduct(null);
-        navigate('/checkout'); 
+        navigate('/checkout', { 
+          state: { 
+            selectedItems: [directItem], 
+            totalPrice: Number(selectedProduct.Price) * quantity,
+            isBuyNow: true // Đánh dấu là mua ngay để Checkout không lấy dữ liệu giỏ hàng
+          } 
+        });
       } else {
-        // CASE: THÊM VÀO GIỎ -> Thông báo và đóng modal
+        // CASE: ADD TO CART -> GỌI API LƯU VÀO DATABASE
+        await axios.post('http://localhost:3000/api/cart/add', { 
+          UserID: user.id || user.UserID, 
+          ProductID: selectedProduct.ProductID, 
+          SizeID: selectedSize.SizeID, 
+          Quantity: quantity 
+        });
+
+        window.dispatchEvent(new Event('cartUpdated'));
         setToast(`✨ Added to cart!`);
         setSelectedProduct(null);
         setTimeout(() => setToast(''), 3000);
@@ -178,12 +188,6 @@ export default function Shop() {
             </div>
           ))}
         </div>
-
-        {filteredProducts.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '100px 0', color: colors.textLight }}>
-            <p style={{ fontSize: '20px' }}>No matching products found.</p>
-          </div>
-        )}
       </div>
 
       {selectedProduct && (
