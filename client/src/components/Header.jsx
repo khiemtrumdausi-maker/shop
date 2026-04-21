@@ -58,10 +58,10 @@ export default function Header() {
       
       {/* MENU ĐIỀU HƯỚNG */}
       <div style={{ display: 'flex', gap: '50px' }}>
-        <span style={location.pathname === '/' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/')}>Trang Chủ</span>
-        <span style={location.pathname === '/shop' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/shop')}>Cửa Hàng</span>
-        <span style={location.pathname === '/about' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/about')}>Giới Thiệu</span>
-        <span style={location.pathname === '/contact' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/contact')}>Liên Hệ</span>
+        <span style={location.pathname === '/' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/')}>Home</span>
+        <span style={location.pathname === '/shop' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/shop')}>Shop</span>
+        <span style={location.pathname === '/about' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/about')}>About Us</span>
+        <span style={location.pathname === '/contact' ? navLinkActiveStyle : navLinkStyle} onClick={() => navigate('/contact')}>Contact</span>
       </div>
 
       {/* ICON TIỆN ÍCH */}
@@ -91,9 +91,9 @@ export default function Header() {
               </svg>
             </div>
             <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Xin chào,</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Hello,</div>
               <div style={{ fontSize: '14px', fontWeight: '700', color: colors.text, maxWidth: '130px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user ? user.name : 'Khách'}
+                {user ? user.name : 'Guest'}
               </div>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Header() {
                 onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = colors.textLight; }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                Thông tin cá nhân
+                My Profile
               </div>
 
               {/* LỊCH SỬ ĐƠN HÀNG (QUAN TRỌNG) */}
@@ -122,7 +122,7 @@ export default function Header() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/>
                 </svg>
-                Lịch sử đơn hàng
+                Order History
               </div>
 
               {/* ĐĂNG XUẤT */}
@@ -133,7 +133,7 @@ export default function Header() {
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                Đăng xuất
+                Logout
               </div>
             </div>
           )}

@@ -1,8 +1,7 @@
-// File: server/models/UserModel.js
 const db = require('../config/db');
 
 class UserModel {
-  // 1. Kiểm tra đăng nhập (Bỏ Status = "Active" ở đây để Controller xử lý thông báo riêng)
+  // Tìm user theo Email và Password (để Login)
   static async findByCredentials(email, password) {
     const [rows] = await db.execute(
       'SELECT * FROM users WHERE Email = ? AND Password = ?', 
@@ -11,50 +10,53 @@ class UserModel {
     return rows[0]; 
   }
 
-  // 2. Kiểm tra email tồn tại
+  // Kiểm tra Email đã tồn tại chưa
   static async findByEmail(email) {
     const [rows] = await db.execute('SELECT * FROM users WHERE Email = ?', [email]);
     return rows;
   }
 
-  // 3. Đăng ký tài khoản mới
+  // Khách hàng tự đăng ký (Mặc định Role: Customer, Status: Active)
   static async create(userData) {
     const { name, email, password, phone, address } = userData;
     const [result] = await db.execute(
-      'INSERT INTO users (FullName, Email, Password, PhoneNumber, Address, Role, Status) VALUES (?, ?, ?, ?, ?, "Customer", "Active")',
+      'INSERT INTO users (Name, Email, Password, Phone, Address, Role, Status) VALUES (?, ?, ?, ?, ?, "Customer", "Active")',
       [name, email, password, phone, address]
     );
     return result;
   }
 
-  // 4. Cập nhật thông tin người dùng
+  // Khách hàng tự sửa Profile (Chỉ sửa Name, Phone, Address)
   static async update(userId, userData) {
-    const { name, phone, address } = userData;
+    const name = userData.name || userData.Name;
+    const phone = userData.phone || userData.Phone;
+    const address = userData.address || userData.Address;
+
     const [result] = await db.execute(
-      'UPDATE users SET FullName = ?, PhoneNumber = ?, Address = ? WHERE UserID = ?',
+      'UPDATE users SET Name = ?, Phone = ?, Address = ? WHERE UserID = ?',
       [name, phone, address, userId]
     );
     return result;
   }
 
-  // 7. [MỚI] Cập nhật riêng trạng thái (Dùng cho Admin Toggle Status)
-  static async updateStatus(userId, status) {
-    const [result] = await db.execute(
-      'UPDATE users SET Status = ? WHERE UserID = ?',
-      [status, userId]
-    );
-    return result;
-  }
-
-  // 5. Lấy tất cả người dùng
+  // Lấy toàn bộ danh sách User cho Admin xem
   static async getAll() {
     const [rows] = await db.execute('SELECT * FROM users ORDER BY UserID DESC');
     return rows;
   }
 
-  // 6. Xóa người dùng
+  // Admin thực hiện XÓA User
   static async delete(id) {
     const [result] = await db.execute('DELETE FROM users WHERE UserID = ?', [id]);
+    return result;
+  }
+
+  // Admin thực hiện KHÓA/MỞ tài khoản
+  static async updateStatus(userId, status) {
+    const [result] = await db.execute(
+      'UPDATE users SET Status = ? WHERE UserID = ?',
+      [status, userId]
+    );
     return result;
   }
 }

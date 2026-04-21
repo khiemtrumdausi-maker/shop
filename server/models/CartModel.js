@@ -1,4 +1,3 @@
-// File: server/models/CartModel.js
 const db = require('../config/db');
 
 class CartModel {
@@ -20,7 +19,7 @@ class CartModel {
 
     // 2. Logic thêm sản phẩm vào giỏ hàng (ĐÃ THÊM KIỂM TRA TỒN KHO)
     static async addItem(userId, productId, sizeId, quantity) {
-        // BƯỚC 1: KIỂM TRA TỒN KHO TRƯỚC
+        // BƯỚC 1: KIỂM TRA TỒN KHO TRƯỚC (Bảng productsize, cột Stock)
         const [stockCheck] = await db.execute(
             'SELECT Stock FROM productsize WHERE ProductID = ? AND SizeID = ?',
             [productId, sizeId]
@@ -49,21 +48,25 @@ class CartModel {
 
         // BƯỚC 4: CHẶN NẾU VƯỢT QUÁ TỒN KHO
         if (newQuantity > availableStock) {
-            return { status: 400, message: `Rất tiếc, chỉ còn ${availableStock} sản phẩm trong kho!` };
+            return { 
+                status: 400, 
+                message: `Sorry, only ${availableStock} items left in stock!` 
+            };
         }
 
         // BƯỚC 5: Cập nhật hoặc Thêm mới nếu đủ hàng
         if (existingItem.length > 0) {
             await db.execute('UPDATE cartitems SET Quantity = ? WHERE CartItemID = ?', [newQuantity, existingItem[0].CartItemID]);
-            return { status: 200, message: 'Đã cập nhật số lượng!' };
+            return { status: 200, message: 'Quantity updated successfully!' };
         } else {
             await db.execute(
                 'INSERT INTO cartitems (CartID, ProductID, SizeID, Quantity) VALUES (?, ?, ?, ?)',
                 [cartId, productId, sizeId, quantity || 1]
             );
-            return { status: 201, message: 'Đã thêm vào giỏ hàng!' };
+            return { status: 201, message: 'Added to cart successfully!' };
         }
     }
+
     // 3. Xóa một sản phẩm khỏi giỏ
     static async removeItem(cartItemId) {
         const [result] = await db.execute('DELETE FROM cartitems WHERE CartItemID = ?', [cartItemId]);
@@ -76,16 +79,27 @@ class CartModel {
         return result;
     }
 
-   // 5. Đếm tổng số lượng sản phẩm trong giỏ (ĐÃ FIX LỖI TYPO)
+    // 5. Đếm tổng số lượng sản phẩm trong giỏ
     static async countItems(userId) {
         const sql = `
             SELECT SUM(ci.Quantity) as total 
             FROM carts c 
-            JOIN cartitems ci ON c.CartID = ci.CartID /* Sửa c.CartID thành ci.CartID ở đây */
+            JOIN cartitems ci ON c.CartID = ci.CartID
             WHERE c.UserID = ?
         `;
         const [rows] = await db.execute(sql, [userId]);
         return rows[0].total || 0;
+    }
+
+    // 6. Xóa sạch giỏ hàng (Dùng sau khi thanh toán thành công)
+    static async clearCartByUserId(userId) {
+        const sql = `
+            DELETE ci FROM cartitems ci 
+            JOIN carts c ON ci.CartID = c.CartID 
+            WHERE c.UserID = ?
+        `;
+        const [result] = await db.execute(sql, [userId]);
+        return result;
     }
 }
 

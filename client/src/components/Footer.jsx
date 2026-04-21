@@ -16,44 +16,44 @@ export default function Footer() {
         <div style={{ flex: 2 }}>
           <h2 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: '0 0 20px 0' }}>CGK SHOP</h2>
           <p style={{ lineHeight: '1.6', marginBottom: '20px' }}>
-            Chúng tôi tự hào mang đến cho bạn những sản phẩm thời trang chất lượng, dẫn đầu xu hướng và phù hợp với mọi phong cách.
+            We pride ourselves on providing high-quality, trend-setting fashion products that perfectly match every style.
           </p>
         </div>
 
         {/* Cột 2: Danh Mục */}
         <div>
-          <h3 style={{ color: 'white', fontSize: '18px', margin: '0 0 20px 0' }}>Danh Mục</h3>
+          <h3 style={{ color: 'white', fontSize: '18px', margin: '0 0 20px 0' }}>Categories</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/shop')}>Áo</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/shop')}>Quần</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/shop')}>Phụ Kiện</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/shop')}>Tops</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/shop')}>Bottoms</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/shop')}>Accessories</span>
           </div>
         </div>
 
         {/* Cột 3: Chính Sách */}
         <div>
-          <h3 style={{ color: 'white', fontSize: '18px', margin: '0 0 20px 0' }}>Chính Sách</h3>
+          <h3 style={{ color: 'white', fontSize: '18px', margin: '0 0 20px 0' }}>Policies</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <span style={{ cursor: 'pointer' }}>Vận chuyển & Giao nhận</span>
-            <span style={{ cursor: 'pointer' }}>Bảo mật thông tin</span>
-            <span style={{ cursor: 'pointer' }}>Điều khoản dịch vụ</span>
+            <span style={{ cursor: 'pointer' }}>Shipping & Delivery</span>
+            <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
+            <span style={{ cursor: 'pointer' }}>Terms of Service</span>
           </div>
         </div>
 
         {/* Cột 4: Liên Hệ */}
         <div>
-          <h3 style={{ color: 'white', fontSize: '18px', margin: '0 0 20px 0' }}>Liên Hệ</h3>
+          <h3 style={{ color: 'white', fontSize: '18px', margin: '0 0 20px 0' }}>Contact Us</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <span>📍 Học viện Công nghệ Bưu chính Viễn thông, Hà Nội</span>
+            <span>📍 Posts and Telecommunications Institute of Technology, Hanoi</span>
             <span>📞 +84 123 456 789</span>
-            <span>✉️ support@cgkshop.vn</span>
+            <span>✉️ support@cgkshop.com</span>
           </div>
         </div>
       </div>
 
       {/* Bản quyền */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center' }}>
-        <span>© 2026 CGK SHOP. Tất cả các quyền được bảo lưu.</span>
+        <span>© 2026 CGK SHOP. All rights reserved.</span>
       </div>
     </footer>
   );

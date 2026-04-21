@@ -48,7 +48,7 @@ export default function Cart() {
     }
     
     if (stock !== undefined && newQty > stock) {
-      setToast(`⚠️ Chỉ còn ${stock} sản phẩm trong kho!`);
+      setToast(`⚠️ Only ${stock} items left in stock!`);
       setTimeout(() => setToast(''), 2000);
       return;
     }
@@ -60,7 +60,7 @@ export default function Cart() {
       ));
       window.dispatchEvent(new Event('cartUpdated'));
     } catch (e) { 
-      setToast('❌ Lỗi cập nhật số lượng'); 
+      setToast('❌ Error updating quantity'); 
     }
   };
 
@@ -70,10 +70,10 @@ export default function Cart() {
       fetchCart();
       setSelectedIds(prev => prev.filter(id => id !== cartItemId));
       window.dispatchEvent(new Event('cartUpdated'));
-      setToast('🗑️ Đã xóa sản phẩm');
+      setToast('🗑️ Item removed from cart');
       setTimeout(() => setToast(''), 2000);
     } catch (e) { 
-        setToast('❌ Lỗi khi xóa'); 
+        setToast('❌ Failed to remove item'); 
     }
   };
 
@@ -86,7 +86,7 @@ export default function Cart() {
       {toast && <div style={{ position: 'fixed', top: '90px', right: '20px', backgroundColor: '#1e293b', color: 'white', padding: '14px 24px', borderRadius: '12px', zIndex: 2000 }}>{toast}</div>}
 
       <div style={{ flex: 1, padding: '40px 5% 100px 5%', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '30px', textAlign: 'center' }}>Giỏ hàng của bạn</h2>
+        <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '30px', textAlign: 'center' }}>Your Shopping Cart</h2>
 
         {cartItems.length > 0 && (
           <div style={{ backgroundColor: 'white', padding: '15px 25px', borderRadius: '15px', border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
@@ -96,14 +96,14 @@ export default function Cart() {
               onChange={toggleSelectAll}
               style={{ width: '20px', height: '20px', cursor: 'pointer' }}
             />
-            <span style={{ fontWeight: '700' }}>Chọn tất cả ({cartItems.length} sản phẩm)</span>
+            <span style={{ fontWeight: '700' }}>Select All ({cartItems.length} items)</span>
           </div>
         )}
 
         {cartItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px', backgroundColor: 'white', borderRadius: '32px' }}>
-            <p style={{marginBottom: '20px', fontWeight: 'bold', color: '#64748b'}}>Giỏ hàng của bạn hiện đang trống!</p>
-            <button onClick={() => navigate('/shop')} style={{ padding: '12px 30px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>Tiếp tục mua sắm</button>
+            <p style={{marginBottom: '20px', fontWeight: 'bold', color: '#64748b'}}>Your cart is currently empty!</p>
+            <button onClick={() => navigate('/shop')} style={{ padding: '12px 30px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>Continue Shopping</button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: '30px', alignItems: 'start' }}>
@@ -127,7 +127,7 @@ export default function Cart() {
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <h4 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>{item.ProductName}</h4>
                     <p style={{ color: '#64748b', fontSize: '13px' }}>Size: <b>{item.SizeName}</b></p>
-                    <p style={{ fontWeight: '800', fontSize: '18px', marginTop: '10px', color: colors.primary }}>{Number(item.Price).toLocaleString()} đ</p>
+                    <p style={{ fontWeight: '800', fontSize: '18px', marginTop: '10px', color: colors.primary }}>{Number(item.Price).toLocaleString()} VND</p>
                   </div>
 
                   <div style={{ textAlign: 'center' }}>
@@ -136,7 +136,7 @@ export default function Cart() {
                       <span style={{ fontWeight: '800', width: '20px' }}>{item.Quantity}</span>
                       <button onClick={() => updateQuantity(item.CartItemID, item.Quantity + 1, item.Stock)} style={{ width: '30px', height: '30px', border: 'none', background: 'white', cursor: 'pointer', fontWeight: 'bold' }}>+</button>
                     </div>
-                    <span style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginTop: '5px' }}>Kho: {item.Stock ?? '...'}</span>
+                    <span style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginTop: '5px' }}>Stock: {item.Stock ?? '...'}</span>
                   </div>
 
                   <button 
@@ -156,24 +156,23 @@ export default function Cart() {
             </div>
 
             <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '25px', border: `1px solid ${colors.border}`, textAlign: 'center', position: 'sticky', top: '100px' }}>
-              <h3 style={{ marginBottom: '25px', fontWeight: 'bold' }}>Tóm tắt đơn hàng</h3>
+              <h3 style={{ marginBottom: '25px', fontWeight: 'bold' }}>Order Summary</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                <span style={{ color: '#64748b' }}>Tạm tính:</span>
-                <span>{totalPrice.toLocaleString()} đ</span>
+                <span style={{ color: '#64748b' }}>Subtotal:</span>
+                <span>{totalPrice.toLocaleString()} VND</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                <span style={{ color: '#64748b' }}>Phí vận chuyển:</span>
-                <span style={{ color: '#10b981', fontWeight: 'bold' }}>Miễn phí</span>
+                <span style={{ color: '#64748b' }}>Shipping:</span>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>Free</span>
               </div>
               <div style={{ height: '1px', backgroundColor: colors.border, margin: '20px 0' }}></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-                <span style={{ fontWeight: '800', fontSize: '18px' }}>Tổng cộng:</span>
-                <span style={{ fontWeight: '900', fontSize: '26px', color: colors.primary }}>{totalPrice.toLocaleString()} đ</span>
+                <span style={{ fontWeight: '800', fontSize: '18px' }}>Total:</span>
+                <span style={{ fontWeight: '900', fontSize: '26px', color: colors.primary }}>{totalPrice.toLocaleString()} VND</span>
               </div>
 
               <button 
                 disabled={selectedIds.length === 0}
-                // SỬA DÒNG NÀY: Thêm userInfo: user vào state
                 onClick={() => navigate('/checkout', { state: { selectedItems, totalPrice, userInfo: user } })}
                 style={{ 
                   width: '100%', 
@@ -186,7 +185,7 @@ export default function Cart() {
                   cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer' 
                 }}
               >
-                Tiến hành thanh toán
+                Proceed to Checkout
               </button>
             </div>
           </div>

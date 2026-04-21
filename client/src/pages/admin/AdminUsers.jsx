@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Edit3, Trash2, User, X, Mail, Phone, MapPin, ShieldCheck, UserX } from 'lucide-react';
+import { Search, UserPlus, Edit3, Trash2, User, X, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -25,14 +25,14 @@ export const AdminUsers = () => {
     }
   };
 
-  // --- HÀM ĐỔI TRẠNG THÁI TÀI KHOẢN (MỚI) ---
+  // --- HÀM ĐỔI TRẠNG THÁI TÀI KHOẢN ---
   const handleToggleStatus = async (userId, currentStatus) => {
     try {
       const res = await axios.patch(`http://localhost:3000/api/auth/users/${userId}/status`, {
         currentStatus: currentStatus
       });
       toast.success(`User is now ${res.data.newStatus}`);
-      loadUsers(); // Reload to update UI
+      loadUsers(); 
     } catch (error) {
       toast.error('Could not update user status');
     }
@@ -57,6 +57,7 @@ export const AdminUsers = () => {
     { label: 'CUSTOMERS', value: users.filter(u => u.Role === 'Customer').length, color: 'text-blue-600' },
   ];
 
+  // --- LOGIC LỌC: ĐÃ BỎ TÌM KIẾM THEO SỐ ĐIỆN THOẠI ---
   const filteredUsers = users.filter(u => 
     ((u.Name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
      (u.Email || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -90,14 +91,17 @@ export const AdminUsers = () => {
         <div className="flex-1 flex items-center gap-3 px-3">
           <Search size={20} className="text-slate-400" />
           <input
-            type="text" placeholder="Search by name, email or phone..."
+            type="text" 
+            placeholder="Search by name or email..." 
             className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-600 outline-none"
-            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <select
           className="bg-slate-50 border-none rounded-xl text-xs font-black text-slate-500 px-6 py-3 outline-none cursor-pointer"
-          value={filterRole} onChange={(e) => setFilterRole(e.target.value)}
+          value={filterRole} 
+          onChange={(e) => setFilterRole(e.target.value)}
         >
           <option value="all">ALL ROLES</option>
           <option value="Admin">ADMIN</option>
@@ -144,7 +148,6 @@ export const AdminUsers = () => {
                   </div>
                 </td>
                 
-                {/* CỘT STATUS: CLICK ĐỂ TOGGLE */}
                 <td className="px-8 py-5 text-center">
                   <button 
                     onClick={() => handleToggleStatus(user.UserID, user.Status)}
@@ -177,7 +180,7 @@ export const AdminUsers = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in duration-200">
             <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-              <h2 className="text-lg font-black text-slate-800 w-full text-center">{editingUser ? 'UPDATE USER PROFILE' : 'CREATE NEW ACCOUNT'}</h2>
+              <h2 className="text-lg font-black text-slate-800 w-full text-center uppercase">{editingUser ? 'Update Profile' : 'Create Account'}</h2>
               <button onClick={closeModal} className="absolute right-8 p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
             </div>
             <form className="p-8 grid grid-cols-2 gap-4">
@@ -187,11 +190,11 @@ export const AdminUsers = () => {
               <input placeholder="Shipping Address" className="col-span-2 w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" value={formData.Address} onChange={(e) => setFormData({...formData, Address: e.target.value})} />
               
               <div className="col-span-2 grid grid-cols-2 gap-4">
-                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Role} onChange={(e) => setFormData({...formData, Role: e.target.value})}>
+                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.Role} onChange={(e) => setFormData({...formData, Role: e.target.value})}>
                     <option value="Customer">Customer</option>
                     <option value="Admin">Administrator</option>
                 </select>
-                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Status} onChange={(e) => setFormData({...formData, Status: e.target.value})}>
+                <select className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.Status} onChange={(e) => setFormData({...formData, Status: e.target.value})}>
                     <option value="Active">Active</option>
                     <option value="Banned">Banned</option>
                 </select>

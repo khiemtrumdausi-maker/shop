@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 class OrderModel {
-    // 1. TẠO ĐƠN HÀNG - ĐÃ SỬA THÀNH "Cash on Delivery"
+    // 1. TẠO ĐƠN HÀNG (Transaction: Tạo đơn + Trừ kho + Xóa giỏ)
     static async createOrder(userId, totalPrice) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
@@ -23,31 +23,43 @@ class OrderModel {
                 [userId]
             );
 
+            if (cartItems.length === 0) throw new Error("Cart is empty");
+
             for (let item of cartItems) {
-                // Lưu chi tiết từng sản phẩm trong đơn hàng
+                // KIỂM TRA TỒN KHO THỰC TẾ (Khớp chuẩn bảng productsize, cột Stock)
+                const [stockCheck] = await connection.execute(
+                    'SELECT Stock FROM productsize WHERE ProductID = ? AND SizeID = ?',
+                    [item.ProductID, item.SizeID]
+                );
+
+                if (stockCheck.length === 0 || stockCheck[0].Stock < item.Quantity) {
+                    throw new Error(`Insufficient stock for Product ID: ${item.ProductID}`);
+                }
+
+                // Lưu chi tiết từng sản phẩm vào đơn hàng
                 await connection.execute(
                     'INSERT INTO orderdetails (OrderID, ProductID, SizeID, Quantity, Price) VALUES (?, ?, ?, ?, ?)',
                     [orderId, item.ProductID, item.SizeID, item.Quantity, item.Price]
                 );
 
-                // Trừ kho (Stock)
+                // TRỪ KHO (Khớp chuẩn bảng productsize, cột Stock)
                 await connection.execute(
                     'UPDATE productsize SET Stock = Stock - ? WHERE ProductID = ? AND SizeID = ?',
                     [item.Quantity, item.ProductID, item.SizeID]
                 );
             }
 
-            // --- ĐÃ SỬA CHỖ NÀY: Sửa "Cash" thành "Cash on Delivery" ---
+            // Ghi nhận thanh toán mặc định là COD
             await connection.execute(
                 'INSERT INTO payments (OrderID, PaymentMethod, Status) VALUES (?, "Cash on Delivery", "Pending")',
                 [orderId]
             );
 
-            // Xóa giỏ hàng sau khi đặt thành công
-            const [cart] = await connection.execute('SELECT CartID FROM carts WHERE UserID = ?', [userId]);
-            if (cart.length > 0) {
-                await connection.execute('DELETE FROM cartitems WHERE CartID = ?', [cart[0].CartID]);
-            }
+            // XÓA SẠCH GIỎ HÀNG SAU KHI ĐẶT THÀNH CÔNG
+            await connection.execute(
+                'DELETE ci FROM cartitems ci JOIN carts c ON ci.CartID = c.CartID WHERE c.UserID = ?',
+                [userId]
+            );
 
             await connection.commit();
             return orderId;
@@ -93,7 +105,7 @@ class OrderModel {
         return rows;
     }
 
-    // 4. HỦY ĐƠN HÀNG
+    // 4. HỦY ĐƠN HÀNG VÀ HOÀN LẠI KHO
     static async cancelAndRestock(orderId) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
@@ -107,6 +119,7 @@ class OrderModel {
             await connection.execute('UPDATE payments SET Status = "Failed" WHERE OrderID = ?', [orderId]);
 
             for (let item of items) {
+                // Hoàn lại số lượng vào kho (Khớp chuẩn bảng productsize, cột Stock)
                 await connection.execute(
                     'UPDATE productsize SET Stock = Stock + ? WHERE ProductID = ? AND SizeID = ?',
                     [item.Quantity, item.ProductID, item.SizeID]
@@ -135,7 +148,6 @@ class OrderModel {
                 [orderId]
             );
         }
-        
         return true;
     }
 
@@ -156,7 +168,7 @@ class OrderModel {
         return rows;
     }
 
-    // 7. LẤY TOP SẢN PHẨM BÁN CHẠY NHẤT (MỚI THÊM)
+    // 7. LẤY TOP SẢN PHẨM BÁN CHẠY NHẤT
     static async getTopSelling() {
         const sql = `
             SELECT 

@@ -53,7 +53,6 @@ export const AdminProducts = () => {
     setCurrentStockProduct(product);
     try {
       const res = await axios.get(`http://localhost:3000/api/products/${product.ProductID}/sizes`);
-      // Chuyển mảng từ API thành object để dễ quản lý trong input
       const stockObj = {};
       res.data.forEach(s => stockObj[s.SizeID] = s.Stock);
       setTempStocks(stockObj);
@@ -157,8 +156,10 @@ export const AdminProducts = () => {
 
   const closeModal = () => { setIsModalOpen(false); setEditingProduct(null); };
 
+  // --- LOGIC LỌC THÔNG MINH: TÌM THEO TÊN HOẶC ID ---
   const filteredProducts = products.filter(p =>
-    (p.ProductName || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (p.ProductName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.ProductID && p.ProductID.toString().includes(searchTerm))
   );
 
   return (
@@ -177,7 +178,7 @@ export const AdminProducts = () => {
         <Search className="text-slate-400 ml-2" size={20} />
         <input
           type="text"
-          placeholder="Search by product name..."
+          placeholder="Search by product name or ID..."
           className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-600 outline-none"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -242,7 +243,6 @@ export const AdminProducts = () => {
 
                 <td className="px-8 py-4 text-center text-slate-400">
                   <div className="flex justify-center gap-2">
-                    {/* NÚT QUẢN LÝ KHO (CHIẾC HỘP) */}
                     <button 
                         onClick={() => openStockModal(product)} 
                         className="p-2 hover:text-orange-500 transition-all hover:bg-orange-50 rounded-xl"
@@ -301,7 +301,7 @@ export const AdminProducts = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden p-8 animate-in zoom-in duration-200">
-            <h2 className="text-xl font-black mb-6 text-slate-800 text-center">{editingProduct ? 'UPDATE PRODUCT' : 'ADD NEW PRODUCT'}</h2>
+            <h2 className="text-xl font-black mb-6 text-slate-800 text-center uppercase tracking-tighter">{editingProduct ? 'Update Product' : 'Add New Product'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input 
                 placeholder="Product Name" className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" 
@@ -316,17 +316,17 @@ export const AdminProducts = () => {
                   type="number" placeholder="Price" className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-700" 
                   value={formData.Price} onChange={e => setFormData({...formData, Price: e.target.value})} required 
                 />
-                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.CategoryID} onChange={e => setFormData({...formData, CategoryID: e.target.value})}>
+                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.CategoryID} onChange={e => setFormData({...formData, CategoryID: e.target.value})}>
                   {categories.map(cat => (
                     <option key={cat.CategoryID} value={cat.CategoryID}>{cat.CategoryName}</option>
                   ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Gender} onChange={e => setFormData({...formData, Gender: e.target.value})}>
+                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.Gender} onChange={e => setFormData({...formData, Gender: e.target.value})}>
                   <option value="Unisex">Unisex</option><option value="Male">Male</option><option value="Female">Female</option>
                 </select>
-                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none" value={formData.Status} onChange={e => setFormData({...formData, Status: e.target.value})}>
+                <select className="px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-500 outline-none cursor-pointer" value={formData.Status} onChange={e => setFormData({...formData, Status: e.target.value})}>
                   <option value="Active">Active</option><option value="Inactive">Inactive</option>
                 </select>
               </div>
@@ -338,8 +338,8 @@ export const AdminProducts = () => {
                 <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
               </label>
               <div className="flex gap-3 pt-4">
-                <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">SAVE PRODUCT</button>
-                <button type="button" onClick={closeModal} className="px-8 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black">CANCEL</button>
+                <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all uppercase">Save Product</button>
+                <button type="button" onClick={closeModal} className="px-8 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase">Cancel</button>
               </div>
             </form>
           </div>

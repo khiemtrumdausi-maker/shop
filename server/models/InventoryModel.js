@@ -1,8 +1,7 @@
-// File: server/models/InventoryModel.js
 const db = require('../config/db');
 
 class InventoryModel {
-    // 1. Cập nhật số lượng tồn kho cho một size cụ thể của sản phẩm
+    // 1. Cập nhật số lượng tồn kho (Thêm mới hoặc cập nhật nếu đã tồn tại)
     static async updateStock(productId, sizeId, stock) {
         const sql = `
             INSERT INTO productsize (ProductID, SizeID, Stock) 
@@ -13,10 +12,10 @@ class InventoryModel {
         return result;
     }
 
-    // 2. Lấy tình trạng kho hàng của một sản phẩm
+    // 2. Lấy tình trạng kho hàng của một sản phẩm (Đã thêm SizeID để sếp dễ dùng ở FE)
     static async getStockByProduct(productId) {
         const sql = `
-            SELECT s.SizeName, ps.Stock 
+            SELECT ps.SizeID, s.SizeName, ps.Stock 
             FROM productsize ps
             JOIN sizes s ON ps.SizeID = s.SizeID
             WHERE ps.ProductID = ?

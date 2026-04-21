@@ -6,7 +6,7 @@ import Footer from '../../components/Footer';
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([{ CategoryID: 0, CategoryName: 'Tất cả' }]); 
+  const [categories, setCategories] = useState([{ CategoryID: 0, CategoryName: 'All Products' }]); 
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
   
@@ -41,7 +41,7 @@ export default function Shop() {
           axios.get('http://localhost:3000/api/categories') 
         ]);
         setProducts(resProducts.data); 
-        setCategories([{ CategoryID: 0, CategoryName: 'Tất cả' }, ...resCategories.data]); 
+        setCategories([{ CategoryID: 0, CategoryName: 'All Products' }, ...resCategories.data]); 
         setLoading(false);
       } catch (error) { setLoading(false); }
     };
@@ -50,7 +50,7 @@ export default function Shop() {
 
   const openModal = async (product, type) => {
     if (!user) { 
-      setToast('⚠️ Vui lòng đăng nhập!'); 
+      setToast('⚠️ Please login first!'); 
       setTimeout(() => navigate('/login'), 1500); 
       return; 
     }
@@ -61,27 +61,57 @@ export default function Shop() {
     try {
       const response = await axios.get(`http://localhost:3000/api/products/${product.ProductID}/sizes`);
       setProductSizes(response.data);
+      // Mặc định chọn size đầu tiên còn hàng
       const firstAvailableSize = response.data.find(s => s.Stock > 0);
       if(firstAvailableSize) setSelectedSize(firstAvailableSize); 
-    } catch (error) { setToast('❌ Lỗi tải kích thước!'); }
+    } catch (error) { setToast('❌ Error loading sizes!'); }
   };
 
+  // --- LOGIC XỬ LÝ KHI ẤN XÁC NHẬN ---
   const handleConfirmAction = async () => {
-    if (!selectedSize) return setToast('⚠️ Vui lòng chọn size!');
+    // 1. Kiểm tra an toàn
+    if (!selectedSize) return setToast('⚠️ Please select a size!');
+    if (!user) {
+      setToast('⚠️ Please login to continue');
+      return navigate('/login');
+    }
+
+    // 2. KIỂM TRA TỒN KHO TRƯỚC KHI GỬI (Fix lỗi sếp gặp)
+    if (quantity > selectedSize.Stock) {
+      setToast(`❌ Error: Only ${selectedSize.Stock} items left!`);
+      return;
+    }
+
     try {
-      await axios.post('http://localhost:3000/api/cart/add', { 
-        UserID: user.id, ProductID: selectedProduct.ProductID, 
-        SizeID: selectedSize.SizeID, Quantity: quantity 
+      // 3. Gọi API thêm vào giỏ hàng (Áp dụng cho cả Add to Cart và Buy Now)
+      const res = await axios.post('http://localhost:3000/api/cart/add', { 
+        UserID: user.id, 
+        ProductID: selectedProduct.ProductID, 
+        SizeID: selectedSize.SizeID, 
+        Quantity: quantity 
       });
+
+      // Bắn sự kiện cập nhật số lượng giỏ hàng trên Header
       window.dispatchEvent(new Event('cartUpdated'));
-      setToast(`✨ Đã thêm vào giỏ!`);
-      const type = actionType;
-      setSelectedProduct(null);
-      if (type === 'buy') setTimeout(() => navigate('/cart'), 800); 
-    } catch (error) { setToast('❌ Lỗi khi thêm!'); }
+
+      if (actionType === 'buy') {
+        // CASE: MUA NGAY -> Đẩy sang trang Checkout
+        setSelectedProduct(null);
+        navigate('/checkout'); 
+      } else {
+        // CASE: THÊM VÀO GIỎ -> Thông báo và đóng modal
+        setToast(`✨ Added to cart!`);
+        setSelectedProduct(null);
+        setTimeout(() => setToast(''), 3000);
+      }
+
+    } catch (error) {
+      console.error("System Error:", error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || 'Could not process request!';
+      setToast(`❌ ${errorMsg}`);
+    }
   };
 
-  // LỌC SẢN PHẨM: Chỉ hiện sản phẩm Active, theo Danh mục và Tìm kiếm
   const filteredProducts = products.filter(p => 
     p.Status === 'Active' && 
     (activeCategoryId === 0 || p.CategoryID === activeCategoryId) && 
@@ -99,7 +129,6 @@ export default function Shop() {
       )}
 
       <div style={{ padding: '50px 5% 100px 5%', maxWidth: '1400px', margin: '0 auto' }}>
-        {/* THANH FILTER & SEARCH */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'start', gap: '20px', marginBottom: '40px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
             <div style={{ padding: '10px 15px', border: `1px solid ${colors.border}`, borderRadius: '8px', backgroundColor: 'white' }}>
@@ -116,19 +145,16 @@ export default function Shop() {
                 </button>
               ))}
               <button onClick={() => setIsExpanded(!isExpanded)} style={{ padding: '8px 20px', borderRadius: '20px', border: `1px dashed ${colors.primary}`, color: colors.primary, cursor: 'pointer', fontWeight: '600' }}>
-                {isExpanded ? 'Thu gọn ↑' : 'Xem thêm ↓'}
+                {isExpanded ? 'Show less ↑' : 'Show more ↓'}
               </button>
             </div>
           </div>
-          <input type="text" placeholder="Tìm kiếm sản phẩm..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ padding: '10px 20px', borderRadius: '30px', border: `1px solid ${colors.border}`, width: '300px', outline: 'none' }} />
+          <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ padding: '10px 20px', borderRadius: '30px', border: `1px solid ${colors.border}`, width: '300px', outline: 'none' }} />
         </div>
 
-        {/* LƯỚI SẢN PHẨM */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
           {filteredProducts.map((product) => (
             <div key={product.ProductID} style={{ backgroundColor: 'white', borderRadius: '20px', padding: '15px', boxShadow: colors.shadow, transition: 'transform 0.3s' }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-              
-              {/* PHẦN HIỂN THỊ ẢNH ĐÃ SỬA URL */}
               <div style={{ position: 'relative', width: '100%', height: '300px', overflow: 'hidden', borderRadius: '12px' }}>
                 <img 
                    src={product.Image?.startsWith('http') ? product.Image : `http://localhost:3000${product.Image}`} 
@@ -143,10 +169,10 @@ export default function Shop() {
 
               <div style={{ padding: '15px 5px' }}>
                 <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: 'bold' }}>{product.ProductName}</h3>
-                <p style={{ fontWeight: '900', fontSize: '22px', marginBottom: '15px', color: colors.text }}>{Number(product.Price).toLocaleString()} đ</p>
+                <p style={{ fontWeight: '900', fontSize: '22px', marginBottom: '15px', color: colors.text }}>{Number(product.Price).toLocaleString()} VND</p>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => openModal(product, 'add')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eff6ff', color: colors.primary, fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>Thêm</button>
-                  <button onClick={() => openModal(product, 'buy')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: colors.primary, color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>Mua ngay</button>
+                  <button onClick={() => openModal(product, 'add')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eff6ff', color: colors.primary, fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>Add to Cart</button>
+                  <button onClick={() => openModal(product, 'buy')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: colors.primary, color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>Buy Now</button>
                 </div>
               </div>
             </div>
@@ -155,19 +181,18 @@ export default function Shop() {
 
         {filteredProducts.length === 0 && !loading && (
           <div style={{ textAlign: 'center', padding: '100px 0', color: colors.textLight }}>
-            <p fontSize="20px">Hiện không có sản phẩm nào phù hợp.</p>
+            <p style={{ fontSize: '20px' }}>No matching products found.</p>
           </div>
         )}
       </div>
 
-      {/* MODAL CHỌN SIZE */}
       {selectedProduct && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropBlur: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000 }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000 }}>
           <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '32px', width: '450px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '8px' }}>{selectedProduct.ProductName}</h2>
-            <p style={{ color: colors.primary, fontWeight: '900', fontSize: '26px', marginBottom: '30px' }}>{Number(selectedProduct.Price).toLocaleString()} đ</p>
+            <p style={{ color: colors.primary, fontWeight: '900', fontSize: '26px', marginBottom: '30px' }}>{Number(selectedProduct.Price).toLocaleString()} VND</p>
             
-            <p style={{ fontWeight: '800', marginBottom: '15px', fontSize: '15px' }}>Chọn Size:</p>
+            <p style={{ fontWeight: '800', marginBottom: '15px', fontSize: '15px' }}>Select Size:</p>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '30px', justifyContent: 'center' }}>
               {productSizes.map((s) => (
                 <button key={s.SizeID} disabled={s.Stock === 0} onClick={() => setSelectedSize(s)}
@@ -177,7 +202,7 @@ export default function Shop() {
               ))}
             </div>
 
-            <p style={{ fontWeight: '800', marginBottom: '15px', fontSize: '15px' }}>Số lượng:</p>
+            <p style={{ fontWeight: '800', marginBottom: '15px', fontSize: '15px' }}>Quantity:</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', justifyContent: 'center', marginBottom: '40px' }}>
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))} style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${colors.border}`, background: 'white', fontSize: '20px', cursor: 'pointer' }}>-</button>
               <span style={{ fontSize: '22px', fontWeight: '900', width: '30px' }}>{quantity}</span>
@@ -185,8 +210,8 @@ export default function Shop() {
             </div>
 
             <div style={{ display: 'flex', gap: '15px' }}>
-              <button onClick={() => setSelectedProduct(null)} style={{ flex: 1, padding: '16px', borderRadius: '16px', border: 'none', backgroundColor: '#f1f5f9', fontWeight: 'bold', cursor: 'pointer' }}>Hủy</button>
-              <button onClick={handleConfirmAction} style={{ flex: 2, padding: '16px', borderRadius: '16px', border: 'none', backgroundColor: colors.primary, color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Xác nhận</button>
+              <button onClick={() => setSelectedProduct(null)} style={{ flex: 1, padding: '16px', borderRadius: '16px', border: 'none', backgroundColor: '#f1f5f9', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleConfirmAction} style={{ flex: 2, padding: '16px', borderRadius: '16px', border: 'none', backgroundColor: colors.primary, color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Confirm</button>
             </div>
           </div>
         </div>
