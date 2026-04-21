@@ -7,6 +7,9 @@ router.post('/checkout', orderController.checkout);
 router.get('/user/:userId', orderController.getUserOrders); 
 
 // --- DÀNH CHO ADMIN ---
+// 👇 THÊM DÒNG NÀY Ở ĐÂY (Phải nằm trên các route có :id) 👇
+router.get('/top-selling', orderController.getTopSelling); 
+
 router.get('/', orderController.getAllOrders); 
 
 // 5. LẤY CHI TIẾT SẢN PHẨM TRONG ĐƠN (Phải có dòng này nút View mới chạy)

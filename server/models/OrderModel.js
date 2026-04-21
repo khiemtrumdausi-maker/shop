@@ -1,17 +1,19 @@
 const db = require('../config/db');
 
 class OrderModel {
-    // 1. TẠO ĐƠN HÀNG (GIỮ NGUYÊN LOGIC CŨ)
-    static async createOrder(userId, totalPrice, paymentMethod) {
+    // 1. TẠO ĐƠN HÀNG - ĐÃ SỬA THÀNH "Cash on Delivery"
+    static async createOrder(userId, totalPrice) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
         try {
+            // Tạo đơn hàng chính
             const [orderResult] = await connection.execute(
                 `INSERT INTO orders (UserID, TotalPrice, Status) VALUES (?, ?, "Pending")`,
                 [userId, totalPrice]
             );
             const orderId = orderResult.insertId;
 
+            // Lấy các sản phẩm từ giỏ hàng để đưa vào đơn hàng
             const [cartItems] = await connection.execute(
                 `SELECT ci.ProductID, ci.SizeID, ci.Quantity, p.Price 
                  FROM cartitems ci 
@@ -22,22 +24,26 @@ class OrderModel {
             );
 
             for (let item of cartItems) {
+                // Lưu chi tiết từng sản phẩm trong đơn hàng
                 await connection.execute(
                     'INSERT INTO orderdetails (OrderID, ProductID, SizeID, Quantity, Price) VALUES (?, ?, ?, ?, ?)',
                     [orderId, item.ProductID, item.SizeID, item.Quantity, item.Price]
                 );
 
+                // Trừ kho (Stock)
                 await connection.execute(
                     'UPDATE productsize SET Stock = Stock - ? WHERE ProductID = ? AND SizeID = ?',
                     [item.Quantity, item.ProductID, item.SizeID]
                 );
             }
 
+            // --- ĐÃ SỬA CHỖ NÀY: Sửa "Cash" thành "Cash on Delivery" ---
             await connection.execute(
-                'INSERT INTO payments (OrderID, PaymentMethod, Status) VALUES (?, ?, "Pending")',
-                [orderId, paymentMethod]
+                'INSERT INTO payments (OrderID, PaymentMethod, Status) VALUES (?, "Cash on Delivery", "Pending")',
+                [orderId]
             );
 
+            // Xóa giỏ hàng sau khi đặt thành công
             const [cart] = await connection.execute('SELECT CartID FROM carts WHERE UserID = ?', [userId]);
             if (cart.length > 0) {
                 await connection.execute('DELETE FROM cartitems WHERE CartID = ?', [cart[0].CartID]);
@@ -53,7 +59,7 @@ class OrderModel {
         }
     }
 
-    // 2. LẤY DANH SÁCH CHO ADMIN (Sửa Alias để chắc chắn bốc được dữ liệu)
+    // 2. LẤY DANH SÁCH CHO ADMIN
     static async getAllOrders() {
         const sql = `
             SELECT 
@@ -70,7 +76,7 @@ class OrderModel {
         return rows;
     }
 
-    // 3. LẤY CHI TIẾT SẢN PHẨM (GIỮ NGUYÊN IMAGE PATH CỦA KHIÊM)
+    // 3. LẤY CHI TIẾT SẢN PHẨM TRONG ĐƠN
     static async getOrderDetails(orderId) {
         const sql = `
             SELECT 
@@ -87,7 +93,7 @@ class OrderModel {
         return rows;
     }
 
-    // 4. HỦY ĐƠN HÀNG (GIỮ NGUYÊN)
+    // 4. HỦY ĐƠN HÀNG
     static async cancelAndRestock(orderId) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
@@ -98,6 +104,7 @@ class OrderModel {
             );
 
             await connection.execute('UPDATE orders SET Status = "Cancelled" WHERE OrderID = ?', [orderId]);
+            await connection.execute('UPDATE payments SET Status = "Failed" WHERE OrderID = ?', [orderId]);
 
             for (let item of items) {
                 await connection.execute(
@@ -116,12 +123,23 @@ class OrderModel {
         }
     }
 
-    // 5. CẬP NHẬT TRẠNG THÁI (GIỮ NGUYÊN)
+    // 5. CẬP NHẬT TRẠNG THÁI
     static async updateOrderStatus(orderId, status) {
-        return await db.execute('UPDATE orders SET Status = ? WHERE OrderID = ?', [status, orderId]);
+        await db.execute('UPDATE orders SET Status = ? WHERE OrderID = ?', [status, orderId]);
+
+        if (status === 'Delivered') {
+            await db.execute(
+                `UPDATE payments 
+                 SET Status = "Completed", PaymentDate = NOW() 
+                 WHERE OrderID = ?`,
+                [orderId]
+            );
+        }
+        
+        return true;
     }
 
-    // 6. LỊCH SỬ CHO KHÁCH (Sửa u.name -> u.Name cho khớp DB)
+    // 6. LỊCH SỬ ĐƠN HÀNG CỦA KHÁCH
     static async getByUserId(userId) {
         const sql = `
             SELECT 
@@ -135,6 +153,27 @@ class OrderModel {
             ORDER BY o.OrderDate DESC
         `;
         const [rows] = await db.execute(sql, [userId]);
+        return rows;
+    }
+
+    // 7. LẤY TOP SẢN PHẨM BÁN CHẠY NHẤT (MỚI THÊM)
+    static async getTopSelling() {
+        const sql = `
+            SELECT 
+                p.ProductID, 
+                p.ProductName, 
+                p.Image, 
+                SUM(od.Quantity) as TotalSold, 
+                SUM(od.Quantity * od.Price) as TotalRevenue
+            FROM orderdetails od
+            JOIN orders o ON od.OrderID = o.OrderID
+            JOIN products p ON od.ProductID = p.ProductID
+            WHERE o.Status = 'Delivered' OR o.Status = 'Completed'
+            GROUP BY p.ProductID, p.ProductName, p.Image
+            ORDER BY TotalSold DESC
+            LIMIT 4
+        `;
+        const [rows] = await db.execute(sql);
         return rows;
     }
 }

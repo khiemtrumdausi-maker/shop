@@ -7,14 +7,17 @@ import Shop from './pages/customer/Shop';
 import About from './pages/customer/About'; 
 import Contact from './pages/customer/Contact';
 import Profile from './pages/customer/Profile';
-// Thêm import OrderHistory với ngoặc nhọn { } để đồng bộ với Admin
 import { OrderHistory } from './pages/customer/OrderHistory'; 
+// 1. THÊM IMPORT TRANG CHECKOUT VÀO ĐÂY
+import { Checkout } from './pages/customer/Checkout'; 
 
 import AdminLayout from './components/AdminLayout'; 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminUsers } from './pages/admin/AdminUsers';
+
+// ... (Các hàm HomeRedirect và AdminRoute giữ nguyên nhé) ...
 
 const HomeRedirect = () => {
   const userInfo = JSON.parse(localStorage.getItem('user'));
@@ -45,8 +48,10 @@ function App() {
         <Route path="/about" element={<About />} /> 
         <Route path="/contact" element={<Contact />} />
         <Route path="/profile" element={<Profile />} />
-        {/* Route Lịch sử đơn hàng mới thêm */}
         <Route path="/order-history" element={<OrderHistory />} />
+        
+        {/* 2. KHAI BÁO ROUTE CHECKOUT Ở ĐÂY */}
+        <Route path="/checkout" element={<Checkout />} />
 
         {/* --- ADMIN ROUTES --- */}
         <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />

@@ -117,7 +117,6 @@ export default function Cart() {
                     style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                   />
                   
-                  {/* PHẦN HIỂN THỊ ẢNH ĐÃ FIX URL */}
                   <img 
                     src={item.Image?.startsWith('http') ? item.Image : `http://localhost:3000${item.Image}`} 
                     style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '10px' }} 
@@ -125,7 +124,7 @@ export default function Cart() {
                     alt={item.ProductName}
                   />
 
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
                     <h4 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>{item.ProductName}</h4>
                     <p style={{ color: '#64748b', fontSize: '13px' }}>Size: <b>{item.SizeName}</b></p>
                     <p style={{ fontWeight: '800', fontSize: '18px', marginTop: '10px', color: colors.primary }}>{Number(item.Price).toLocaleString()} đ</p>
@@ -171,10 +170,21 @@ export default function Cart() {
                 <span style={{ fontWeight: '800', fontSize: '18px' }}>Tổng cộng:</span>
                 <span style={{ fontWeight: '900', fontSize: '26px', color: colors.primary }}>{totalPrice.toLocaleString()} đ</span>
               </div>
+
               <button 
                 disabled={selectedIds.length === 0}
-                onClick={() => navigate('/checkout', { state: { selectedItems, totalPrice } })}
-                style={{ width: '100%', padding: '18px', backgroundColor: selectedIds.length === 0 ? '#cbd5e1' : colors.primary, color: 'white', border: 'none', borderRadius: '30px', fontWeight: 'bold', cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer' }}
+                // SỬA DÒNG NÀY: Thêm userInfo: user vào state
+                onClick={() => navigate('/checkout', { state: { selectedItems, totalPrice, userInfo: user } })}
+                style={{ 
+                  width: '100%', 
+                  padding: '18px', 
+                  backgroundColor: selectedIds.length === 0 ? '#cbd5e1' : colors.primary, 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '30px', 
+                  fontWeight: 'bold', 
+                  cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer' 
+                }}
               >
                 Tiến hành thanh toán
               </button>

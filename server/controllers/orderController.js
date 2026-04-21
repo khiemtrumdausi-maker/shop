@@ -2,28 +2,27 @@ const OrderModel = require('../models/OrderModel');
 
 // 1. Checkout
 const checkout = async (req, res) => {
-    const { UserID, TotalPrice, PaymentMethod } = req.body;
+    const { UserID, TotalPrice } = req.body;
     try {
-        const orderId = await OrderModel.createOrder(UserID, TotalPrice, PaymentMethod);
+        const orderId = await OrderModel.createOrder(UserID, TotalPrice);
         res.status(201).json({ message: 'Order placed successfully!', orderId });
     } catch (error) {
-        console.error('❌ Checkout Error:', error.message); // In lỗi ra terminal
+        console.error('❌ Checkout Error:', error.message);
         res.status(500).json({ message: 'Error placing order', error: error.message });
     }
 };
 
-// 2. Get Order Details (HÀM NÀY ĐANG BỊ LỖI 500 TRÊN MÀN HÌNH CỦA KHIÊM)
+// 2. Get Order Details
 const getOrderDetails = async (req, res) => {
     const { id } = req.params;
     try {
         const details = await OrderModel.getOrderDetails(id);
         res.status(200).json(details);
     } catch (error) {
-        // Dòng này cực kỳ quan trọng để Khiêm check Terminal xem sai ở đâu (sai tên bảng hay tên cột)
         console.error('❌ SQL Query Error in getOrderDetails:', error.message); 
         res.status(500).json({ 
             message: 'Internal Server Error', 
-            error: error.message // Trả về cả message lỗi để debug cho nhanh
+            error: error.message 
         });
     }
 };
@@ -69,10 +68,22 @@ const updateStatus = async (req, res) => {
     }
 };
 
+// 6. LẤY TOP SẢN PHẨM BÁN CHẠY NHẤT (MỚI THÊM)
+const getTopSelling = async (req, res) => {
+    try {
+        const topProducts = await OrderModel.getTopSelling();
+        res.status(200).json(topProducts);
+    } catch (error) {
+        console.error('❌ Lỗi lấy Top Selling:', error.message);
+        res.status(500).json({ message: 'Lỗi Server' });
+    }
+};
+
 module.exports = { 
     checkout, 
     getOrderDetails, 
     getUserOrders, 
     getAllOrders, 
-    updateStatus 
+    updateStatus,
+    getTopSelling // Đã export hàm mới ra đây
 };
