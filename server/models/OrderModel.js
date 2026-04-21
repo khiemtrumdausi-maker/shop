@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 class OrderModel {
-    // 1. TẠO ĐƠN HÀNG
+    // 1. TẠO ĐƠN HÀNG (GIỮ NGUYÊN LOGIC CŨ)
     static async createOrder(userId, totalPrice, paymentMethod) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
@@ -53,14 +53,14 @@ class OrderModel {
         }
     }
 
-    // 2. LẤY DANH SÁCH CHO ADMIN
+    // 2. LẤY DANH SÁCH CHO ADMIN (Sửa Alias để chắc chắn bốc được dữ liệu)
     static async getAllOrders() {
         const sql = `
             SELECT 
                 o.*, 
-                u.name as CustomerName, 
-                u.phone as CustomerPhone, 
-                u.address as CustomerAddress,
+                u.Name as CustomerName, 
+                u.Phone as CustomerPhone, 
+                u.Address as CustomerAddress,
                 u.Email as UserEmail
             FROM orders o 
             LEFT JOIN users u ON o.UserID = u.UserID 
@@ -70,13 +70,13 @@ class OrderModel {
         return rows;
     }
 
-    // 3. LẤY CHI TIẾT SẢN PHẨM TRONG ĐƠN
+    // 3. LẤY CHI TIẾT SẢN PHẨM (GIỮ NGUYÊN IMAGE PATH CỦA KHIÊM)
     static async getOrderDetails(orderId) {
         const sql = `
             SELECT 
                 od.*, 
                 p.ProductName, 
-                p.Image as ImagePath,  -- Đã đổi thành p.Image cho đúng với DB của Khiêm
+                p.Image as ImagePath, 
                 s.SizeName
             FROM orderdetails od
             JOIN products p ON od.ProductID = p.ProductID
@@ -87,7 +87,7 @@ class OrderModel {
         return rows;
     }
 
-    // 4. HỦY ĐƠN HÀNG (Hoàn trả kho)
+    // 4. HỦY ĐƠN HÀNG (GIỮ NGUYÊN)
     static async cancelAndRestock(orderId) {
         const connection = await db.getConnection();
         await connection.beginTransaction();
@@ -116,19 +116,19 @@ class OrderModel {
         }
     }
 
-    // 5. CẬP NHẬT TRẠNG THÁI
+    // 5. CẬP NHẬT TRẠNG THÁI (GIỮ NGUYÊN)
     static async updateOrderStatus(orderId, status) {
         return await db.execute('UPDATE orders SET Status = ? WHERE OrderID = ?', [status, orderId]);
     }
 
-    // 6. LỊCH SỬ ĐƠN HÀNG CỦA KHÁCH
+    // 6. LỊCH SỬ CHO KHÁCH (Sửa u.name -> u.Name cho khớp DB)
     static async getByUserId(userId) {
         const sql = `
             SELECT 
                 o.*, 
-                u.name as CustomerName, 
-                u.phone as CustomerPhone, 
-                u.address as CustomerAddress
+                u.Name as CustomerName, 
+                u.Phone as CustomerPhone, 
+                u.Address as CustomerAddress
             FROM orders o 
             LEFT JOIN users u ON o.UserID = u.UserID 
             WHERE o.UserID = ? 

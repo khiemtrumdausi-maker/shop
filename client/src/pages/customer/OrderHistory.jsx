@@ -31,13 +31,13 @@ export const OrderHistory = () => {
         }
     };
 
-    // Hàm này dùng để mở Modal và bốc dữ liệu sản phẩm từ Server
     const handleViewDetails = async (order) => {
         try {
             const res = await axios.get(`http://localhost:3000/api/orders/${order.OrderID}/details`);
             setOrderDetails(res.data);
-            setSelectedOrder(order); // Lưu order được chọn
-            setIsModalOpen(true);    // Mở Modal
+            // QUAN TRỌNG: Lưu lại toàn bộ object order (đã có CustomerName, Phone, Address từ Backend)
+            setSelectedOrder(order); 
+            setIsModalOpen(true);
         } catch (error) {
             toast.error("Failed to load item details");
         }
@@ -84,7 +84,6 @@ export const OrderHistory = () => {
                 <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">Track and manage your recent purchases</p>
             </div>
 
-            {/* Filter Tabs */}
             <div className="flex flex-wrap gap-2 mb-10 bg-slate-50 p-2 rounded-[2rem] border border-slate-100">
                 {tabs.map(tab => (
                     <button
@@ -101,11 +100,10 @@ export const OrderHistory = () => {
                 ))}
             </div>
 
-            {/* Orders List */}
             {filteredOrders.length === 0 ? (
                 <div className="text-center py-24 bg-slate-50 rounded-[3.5rem] border-2 border-dashed border-slate-200">
                     <ShoppingBag className="mx-auto text-slate-200 mb-6" size={64} />
-                    <p className="text-slate-400 font-black uppercase italic tracking-widest text-xs">No orders found in this section</p>
+                    <p className="text-slate-400 font-black uppercase italic tracking-widest text-xs">No orders found</p>
                 </div>
             ) : (
                 <div className="grid gap-6">
@@ -126,7 +124,6 @@ export const OrderHistory = () => {
                                     <p className="text-[10px] font-black text-slate-300 uppercase mb-1">Total Payment</p>
                                     <p className="text-xl font-black text-blue-600 tracking-tighter">{Number(order.TotalPrice).toLocaleString()}đ</p>
                                 </div>
-                                {/* ĐÃ GẮN onClick Ở ĐÂY CHO KHIÊM */}
                                 <button 
                                     onClick={() => handleViewDetails(order)}
                                     className="px-8 py-4 bg-[#0F172A] text-white rounded-2xl font-black text-[10px] uppercase hover:bg-blue-600 transition-all flex items-center gap-2"
@@ -139,12 +136,12 @@ export const OrderHistory = () => {
                 </div>
             )}
 
-            {/* Modal Chi Tiết - Luôn nằm trong return nhưng chỉ hiện khi isModalOpen = true */}
+            {/* MODAL CHI TIẾT - ĐÃ SỬA ĐỂ HIỆN INFO KHÁCH HÀNG */}
             {isModalOpen && selectedOrder && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-2xl w-full overflow-hidden animate-in zoom-in duration-200">
-                        <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 relative">
-                            <h2 className="text-lg font-black text-slate-800 w-full text-center uppercase italic tracking-tight pl-4">Order Details #ORD-{selectedOrder.OrderID}</h2>
+                        <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 relative text-left">
+                            <h2 className="text-lg font-black text-slate-800 w-full text-center uppercase italic">Order Details #ORD-{selectedOrder.OrderID}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="absolute right-8 p-2 hover:bg-white rounded-full text-slate-400">
                                 <X size={20}/>
                             </button>
@@ -154,49 +151,50 @@ export const OrderHistory = () => {
                             <div className="space-y-6">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Shipping Information</p>
-                                    <div className="bg-slate-50 p-5 rounded-[2rem] space-y-3">
+                                    <div className="bg-slate-50 p-6 rounded-[2rem] space-y-4">
                                         <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
-                                            <User size={14} className="text-blue-500"/> {user?.name || 'Customer'}
+                                            <User size={14} className="text-blue-500 flex-shrink-0"/> 
+                                            {/* Ưu tiên lấy CustomerName từ Backend */}
+                                            {selectedOrder.CustomerName || user?.name || 'Customer'}
                                         </div>
                                         <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
-                                            <Phone size={14} className="text-blue-500"/> {user?.phone || 'N/A'}
+                                            <Phone size={14} className="text-blue-500 flex-shrink-0"/> 
+                                            {selectedOrder.CustomerPhone || user?.phone || 'N/A'}
                                         </div>
                                         <div className="flex items-start gap-3 text-xs font-bold text-slate-700 leading-tight">
-                                            <MapPin size={14} className="text-blue-500 flex-shrink-0 mt-1"/> {user?.address || 'N/A'}
+                                            <MapPin size={14} className="text-blue-500 flex-shrink-0 mt-1"/> 
+                                            {selectedOrder.CustomerAddress || user?.address || 'N/A'}
                                         </div>
                                     </div>
                                 </div>
 
                                 {selectedOrder.Status === 'Pending' && (
-                                    <div className="pt-4 border-t border-slate-100">
-                                        <button 
-                                            onClick={() => handleCancelOrder(selectedOrder.OrderID)}
-                                            className="w-full py-4 rounded-2xl bg-red-50 text-red-600 font-black text-[10px] uppercase border border-red-100 hover:bg-red-100 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <XCircle size={16}/> Cancel Order
-                                        </button>
-                                        <p className="text-[9px] text-center text-slate-400 mt-3 font-bold uppercase italic">* Cancellation is only available for pending orders</p>
-                                    </div>
+                                    <button 
+                                        onClick={() => handleCancelOrder(selectedOrder.OrderID)}
+                                        className="w-full py-4 rounded-2xl bg-red-50 text-red-600 font-black text-[10px] uppercase border border-red-100 hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <XCircle size={16}/> Cancel Order
+                                    </button>
                                 )}
                             </div>
 
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Order Summary</p>
-                                <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar text-left">
+                                <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
                                     {orderDetails.map((item, idx) => (
                                         <div key={idx} className="flex items-center gap-4 bg-white border border-slate-100 p-3 rounded-2xl">
                                             <img src={`http://localhost:3000${item.ImagePath}`} className="w-12 h-12 object-cover rounded-xl shadow-sm" alt="" />
                                             <div className="flex-1">
-                                                <p className="text-[10px] font-black text-slate-800 line-clamp-1">{item.ProductName}</p>
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Size: {item.SizeName} | Qty: {item.Quantity}</p>
+                                                <p className="text-[10px] font-black text-slate-800 line-clamp-1 italic uppercase tracking-tighter">{item.ProductName}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Size: {item.SizeName} | Qty: {item.Quantity}</p>
                                             </div>
                                             <p className="text-xs font-black text-slate-900">{Number(item.Price).toLocaleString()}đ</p>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-dashed border-slate-200 flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase">Total Amount:</span>
-                                    <span className="text-xl font-black text-blue-600 tracking-tighter">{Number(selectedOrder.TotalPrice).toLocaleString()}đ</span>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase italic">Total Amount</span>
+                                    <span className="text-xl font-black text-blue-600 tracking-tighter italic">{Number(selectedOrder.TotalPrice).toLocaleString()}đ</span>
                                 </div>
                             </div>
                         </div>
