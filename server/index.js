@@ -18,6 +18,7 @@ const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const aiController = require('./controllers/aiController'); // <-- THÊM DÒNG NÀY
 
 // 3. KHAI BÁO SỬ DỤNG ROUTE (Gom lại cho dễ quản lý)
 app.use('/api/auth', authRoutes);
@@ -25,6 +26,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
+app.post('/api/ai/chat', aiController.chatWithAI);
 
 // Route mặc định kiểm tra server
 app.get('/', (req, res) => {

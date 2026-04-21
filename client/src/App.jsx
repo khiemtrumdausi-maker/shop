@@ -8,7 +8,6 @@ import About from './pages/customer/About';
 import Contact from './pages/customer/Contact';
 import Profile from './pages/customer/Profile';
 import { OrderHistory } from './pages/customer/OrderHistory'; 
-// 1. THÊM IMPORT TRANG CHECKOUT VÀO ĐÂY
 import { Checkout } from './pages/customer/Checkout'; 
 
 import AdminLayout from './components/AdminLayout'; 
@@ -17,7 +16,8 @@ import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminUsers } from './pages/admin/AdminUsers';
 
-// ... (Các hàm HomeRedirect và AdminRoute giữ nguyên nhé) ...
+// Import Component AI Chat mới tạo
+import AIChat from './components/AIChat';
 
 const HomeRedirect = () => {
   const userInfo = JSON.parse(localStorage.getItem('user'));
@@ -49,8 +49,6 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/order-history" element={<OrderHistory />} />
-        
-        {/* 2. KHAI BÁO ROUTE CHECKOUT Ở ĐÂY */}
         <Route path="/checkout" element={<Checkout />} />
 
         {/* --- ADMIN ROUTES --- */}
@@ -62,6 +60,9 @@ function App() {
         {/* --- 404 REDIRECT --- */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+
+      {/* Hiển thị nút Chat AI trên toàn bộ ứng dụng */}
+      <AIChat />
     </BrowserRouter>
   );
 }
